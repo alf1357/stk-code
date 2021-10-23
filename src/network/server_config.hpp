@@ -110,6 +110,12 @@ namespace ServerConfig
 
     SERVER_CFG_PREFIX StringServerConfigParam m_blue_team
         SERVER_CFG_DEFAULT(StringServerConfigParam("", "blue-team", "Name of blue players."));
+    
+    SERVER_CFG_PREFIX StringServerConfigParam m_pos_log_path
+        SERVER_CFG_DEFAULT(StringServerConfigParam("pos_log.txt", "pos-log-path", "Directory where the pos log should be written to with / at the end."));
+
+    SERVER_CFG_PREFIX BoolServerConfigParam m_pos_log
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "pos-log","Position Log true or false."));
 
     SERVER_CFG_PREFIX IntServerConfigParam m_fixed_lap_count
         SERVER_CFG_DEFAULT(IntServerConfigParam(-1, "fixed-lap-count","fixed-lap-count"));

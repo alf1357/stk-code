@@ -77,6 +77,12 @@ private:
             m_distance = distance;
         }
     };   // KartDistanceMap
+    
+    // Postion Log
+    int m_xyz_str_count=0;
+    std::string m_pos_log_path="pos_log.txt";
+    bool m_pos_log;
+
 
     std::vector<KartDistanceMap> m_red_kdm;
     std::vector<KartDistanceMap> m_blue_kdm;

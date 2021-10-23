@@ -25,6 +25,9 @@
 #include "io/xml_node.hpp"
 #include "karts/abstract_kart.hpp"
 #include "modes/linear_world.hpp"
+#include "network/server_config.hpp"
+#include <iostream>
+#include <fstream>
 
 #include "utils/log.hpp" //TODO: remove after debugging is done
 
@@ -84,7 +87,6 @@ bool Bowling::updateAndDelete(int ticks)
         removeRollSfx();
         return true;
     }
-
     const AbstractKart *kart=0;
     Vec3        direction;
     float       minDistance;
@@ -137,10 +139,16 @@ bool Bowling::updateAndDelete(int ticks)
         removeRollSfx();
         return true;
     }
-
     if (m_roll_sfx && m_roll_sfx->getStatus()==SFXBase::SFX_PLAYING)
         m_roll_sfx->setPosition(getXYZ());
-
+    if (ServerConfig::m_pos_log)
+    {
+        auto bowlxyz = getXYZ();
+        std::string msg = "b "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2]) + "\n";
+        std::ofstream outfile;
+	outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
+	outfile << msg ;
+    }
     return false;
 }   // updateAndDelete
 

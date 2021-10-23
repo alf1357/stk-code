@@ -25,6 +25,9 @@
 #include "karts/abstract_kart.hpp"
 #include "utils/constants.hpp"
 #include "utils/random_generator.hpp"
+#include "network/server_config.hpp"
+#include <iostream>
+#include <fstream>
 
 #include "utils/log.hpp" //TODO: remove after debugging is done
 
@@ -120,12 +123,16 @@ void Cake::onFireFlyable()
     getClosestKart(&closest_kart, &kart_dist_squared, &direction,
                    m_owner /* search in front of this kart */, backwards);
 
+
+
     // aim at this kart if 1) it's not too far, 2) if the aimed kart's speed
     // allows the projectile to catch up with it
     //
     // this code finds the correct angle and upwards velocity to hit an opponents'
     // vehicle if they were to continue travelling in the same direction and same speed
     // (barring any obstacles in the way of course)
+
+    
     if(closest_kart != NULL && kart_dist_squared < m_st_max_distance_squared &&
         m_speed>closest_kart->getSpeed())
     {

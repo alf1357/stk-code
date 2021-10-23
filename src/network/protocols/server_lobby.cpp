@@ -2238,6 +2238,7 @@ void ServerLobby::update(int ticks)
     }
 
     handlePlayerDisconnection();
+    std::ofstream outfile;
 
     switch (m_state.load())
     {
@@ -2287,6 +2288,8 @@ void ServerLobby::update(int ticks)
         m_state = RESULT_DISPLAY;
         sendMessageToPeers(m_result_ns, /*reliable*/ true);
         Log::info("ServerLobby", "End of game message sent");
+	outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
+        outfile << "GAME_END\n" ;
         break;
     case RESULT_DISPLAY:
         if (checkPeersReady(true/*ignore_ai_peer*/) ||
@@ -2614,6 +2617,9 @@ void ServerLobby::startSelection(const Event *event)
 
     unsigned max_player = 0;
     STKHost::get()->updatePlayers(&max_player);
+    std::ofstream outfile;
+    outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
+    outfile << "GAME_START\n" ;
 
     if (max_player > 10 && (RaceManager::get()->isBattleMode() ||
         RaceManager::get()->isSoccerMode()))
@@ -5970,30 +5976,30 @@ void ServerLobby::handleServerCommand(Event* event,
         std::string peer_name;
         std::string color = argv[2];
         auto peers = STKHost::get()->getPeers();
-	for (auto peer : peers)
+	for (auto peer2 : peers)
         {
-	    peer_name = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+	    peer_name = StringUtils::wideToUtf8(peer2->getPlayerProfiles()[0]->getName());
             if (peer_name==name)
             {
-                auto pp = peer->getPlayerProfiles()[0];
+                auto pp = peer2->getPlayerProfiles()[0];
                 if (argv[2]=="b")
 		{
 		    pp->setTeam(KART_TEAM_BLUE);
-		    if (!(m_blue_team.count(peer_name))) m_blue_team.insert(username); 
-		    if ((m_red_team.count(peer_name))) m_red_team.erase(username); 
-                    peer->setAlwaysSpectate(ASM_NONE);
+		    if (!(m_blue_team.count(peer_name))) m_blue_team.insert(peer_name); 
+		    if ((m_red_team.count(peer_name))) m_red_team.erase(peer_name); 
+                    peer2->setAlwaysSpectate(ASM_NONE);
 		}
 		else if (argv[2]=="r")
 		{
 		    pp->setTeam(KART_TEAM_RED);
-		    if (!(m_red_team.count(peer_name))) m_red_team.insert(username); 
-		    if ((m_blue_team.count(peer_name))) m_blue_team.erase(username); 
-                    peer->setAlwaysSpectate(ASM_NONE);
+		    if (!(m_red_team.count(peer_name))) m_red_team.insert(peer_name); 
+		    if ((m_blue_team.count(peer_name))) m_blue_team.erase(peer_name); 
+                    peer2->setAlwaysSpectate(ASM_NONE);
 		}
 		else if (argv[2]=="s")
 		{
 		    pp->setTeam(KART_TEAM_NONE);
-                    peer->setAlwaysSpectate(ASM_FULL);
+                    peer2->setAlwaysSpectate(ASM_FULL);
 		}
                 updatePlayerList();
 		return;
