@@ -412,6 +412,22 @@ public:
     }
     uint32_t getServerIdOnline() const           { return m_server_id_online; }
     void setClientServerHostId(uint32_t id)   { m_client_server_host_id = id; }
+    bool isVIP(std::shared_ptr<STKPeer>& peer) const;
+    bool isVIP(STKPeer* peer) const;
+    bool isTrusted(std::shared_ptr<STKPeer>& peer) const;
+    bool isTrusted(STKPeer* peer) const;
+    std::set<std::string> m_vip_players;
+    std::set<std::string> m_trusted_players;
+    std::set<std::string> m_red_team;
+    std::set<std::string> m_blue_team;
+    void sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const;
+    void sendStringToAllPeers(std::string& s);
+    bool serverAndPeerHaveTrack(std::shared_ptr<STKPeer>& peer, std::string track_id) const;
+    bool serverAndPeerHaveTrack(STKPeer* peer, std::string track_id) const;
+    std::string m_set_field;
+    std::map<std::string, std::string> m_set_kart;
+    bool canRace(std::shared_ptr<STKPeer>& peer) const;
+    bool canRace(STKPeer* peer) const;
 };   // class ServerLobby
 
 #endif // SERVER_LOBBY_HPP

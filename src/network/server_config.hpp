@@ -92,6 +92,28 @@ namespace ServerConfig
         "Name of server, encode in XML if you want to use unicode "
         "characters."));
 
+    // ----Server Config Variables
+    SERVER_CFG_PREFIX BoolServerConfigParam m_count_supertournament_game
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "count","count"));
+
+    SERVER_CFG_PREFIX BoolServerConfigParam m_supertournament
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "supertournament","supertournament"));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_vip
+    SERVER_CFG_DEFAULT(StringServerConfigParam("TheRocker Gelbbrauenlaubsaenger Waldlaubsaengernest NobWow","vips","Name of VIPs."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_trusted_players
+        SERVER_CFG_DEFAULT(StringServerConfigParam("alfix3", "trusted-players", "Name of trusted players."));
+    
+    SERVER_CFG_PREFIX StringServerConfigParam m_red_team
+        SERVER_CFG_DEFAULT(StringServerConfigParam("", "red-team", "Name of red players."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_blue_team
+        SERVER_CFG_DEFAULT(StringServerConfigParam("", "blue-team", "Name of blue players."));
+
+    SERVER_CFG_PREFIX IntServerConfigParam m_fixed_lap_count
+        SERVER_CFG_DEFAULT(IntServerConfigParam(-1, "fixed-lap-count","fixed-lap-count"));
+
     SERVER_CFG_PREFIX IntServerConfigParam m_server_port
         SERVER_CFG_DEFAULT(IntServerConfigParam(0, "server-port",
         "Port used in server, if you specify 0, it will use the server port "
