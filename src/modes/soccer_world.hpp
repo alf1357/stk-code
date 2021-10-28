@@ -82,6 +82,8 @@ private:
     int m_xyz_str_count=0;
     std::string m_pos_log_path="pos_log.txt";
     bool m_pos_log;
+    // Log
+    std::string m_logfile_name;
 
 
     std::vector<KartDistanceMap> m_red_kdm;
@@ -102,6 +104,11 @@ private:
      *  triggered if the ball is off for more than 2 seconds. */
     int m_ball_invalid_timer;
     int m_ball_hitter;
+    
+    int m_red_hit_ticks;
+    int m_blue_hit_ticks;
+    int m_red_ball_hitter;
+    int m_blue_ball_hitter;
 
     /** Goals data of each team scored */
     std::vector<ScorerData> m_red_scorers;
@@ -113,6 +120,8 @@ private:
     float m_ball_heading;
 
     std::vector<int> m_team_icon_draw_id;
+    
+    bool stopped;
 
     std::vector<btTransform> m_goal_transforms;
     /** Function to update the location the ball on the polygon map */
@@ -130,6 +139,17 @@ private:
     int m_ticks_back_to_own_goal;
 
     void resetKartsToSelfGoals();
+
+
+    std::vector<ScorerData> m_backup_red_scorers;
+    std::vector<ScorerData> m_backup_blue_scorers;
+    int m_backup_reset_ball_ticks;
+    int m_backup_ticks_back_to_own_goal;
+    bool m_explicit_stop;
+    int m_bad_red_goals;
+    int m_bad_blue_goals;
+    int m_init_red_goals;
+    int m_init_blue_goals;
 
 public:
 
@@ -257,6 +277,20 @@ public:
                                 { return getKart(m_team_icon_draw_id[p - 1]); }
     // ------------------------------------------------------------------------
     TrackObject* getBall() const { return m_ball; }
+    //-------------------------------------------------------------------------
+    void stop();
+    // ------------------------------------------------------------------------
+    void resume();
+    // ------------------------------------------------------------------------
+    void allToLobby() { m_explicit_stop = true; }
+    // ------------------------------------------------------------------------
+    void setInitialCount(int red, int blue);
+    // ------------------------------------------------------------------------
+    void tellCount() const;
+    // ------------------------------------------------------------------------
+    void tellCountIfDiffers() const;
+    // ------------------------------------------------------------------------
+    bool getStopped() { return stopped; }
 };   // SoccerWorld
 
 

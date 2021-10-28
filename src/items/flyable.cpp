@@ -459,14 +459,16 @@ bool Flyable::updateAndDelete(int ticks)
 
     //Vec3 xyz=getBody()->getWorldTransform().getOrigin();
     const Vec3 &xyz=getXYZ();
-
+    
+    /*
     if (ServerConfig::m_pos_log && m_type==PowerupManager::POWERUP_CAKE)                                     {   
         auto bowlxyz = getXYZ();
         std::string msg = "c "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2]) + "\n";                                                                            
         std::ofstream outfile;                                                             
         outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
         outfile << msg ;                                                    
-    }       
+    }
+    */    
 
     // Check if the flyable is outside of the track. If so, explode it.
     const Vec3 *min, *max;

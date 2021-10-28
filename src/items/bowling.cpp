@@ -141,6 +141,8 @@ bool Bowling::updateAndDelete(int ticks)
     }
     if (m_roll_sfx && m_roll_sfx->getStatus()==SFXBase::SFX_PLAYING)
         m_roll_sfx->setPosition(getXYZ());
+
+    /*
     if (ServerConfig::m_pos_log)
     {
         auto bowlxyz = getXYZ();
@@ -149,6 +151,7 @@ bool Bowling::updateAndDelete(int ticks)
 	outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
 	outfile << msg ;
     }
+    */
     return false;
 }   // updateAndDelete
 

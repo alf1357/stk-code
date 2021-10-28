@@ -111,6 +111,9 @@ namespace ServerConfig
     SERVER_CFG_PREFIX StringServerConfigParam m_blue_team
         SERVER_CFG_DEFAULT(StringServerConfigParam("", "blue-team", "Name of blue players."));
     
+    SERVER_CFG_PREFIX StringServerConfigParam m_logfile_name
+        SERVER_CFG_DEFAULT(StringServerConfigParam("log.txt", "logfile-name", "File where the log should be written to."));
+    
     SERVER_CFG_PREFIX StringServerConfigParam m_pos_log_path
         SERVER_CFG_DEFAULT(StringServerConfigParam("pos_log.txt", "pos-log-path", "Directory where the pos log should be written to with / at the end."));
 

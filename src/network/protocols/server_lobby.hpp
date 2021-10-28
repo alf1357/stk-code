@@ -80,6 +80,8 @@ private:
     };
     bool m_player_reports_table_exists;
 
+    std::string m_logfile_name;
+
 #ifdef ENABLE_SQLITE3
     sqlite3* m_db;
 
