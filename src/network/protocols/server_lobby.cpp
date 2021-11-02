@@ -6070,10 +6070,11 @@ void ServerLobby::handleServerCommand(Event* event,
 	else if (argv[1]=="2")
         {
             m_available_kts.second.clear();
+            m_set_field = "";
             m_available_kts.second.insert("soccer_field");
             m_available_kts.second.insert("addon_another-soccer-field");
             m_available_kts.second.insert("addon_forest_1");
-            //m_available_kts.second.insert("addon_island-soccer");
+            m_available_kts.second.insert("addon_island-soccer");
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
             sendStringToAllPeers(msg);
 	    outfile << msg+"\n";
@@ -6090,11 +6091,12 @@ void ServerLobby::handleServerCommand(Event* event,
 	else
 	{
 	    m_available_kts.second.clear();
+            m_set_field = "";
             m_available_kts.second.insert("icy_soccer_field");
             m_available_kts.second.insert("soccer_field");
             m_available_kts.second.insert("addon_another-soccer-field");
             m_available_kts.second.insert("addon_forest_1");
-            //m_available_kts.second.insert("addon_island-soccer");
+            m_available_kts.second.insert("addon_island-soccer");
             m_available_kts.second.insert("addon_supertournament-field");
 	}
     }
