@@ -1613,7 +1613,7 @@ void ServerLobby::asynchronousUpdate()
         }
         if (go_on_race)
         {
-	    if (ServerConfig::m_fixed_lap_count >= 0)
+            if (ServerConfig::m_fixed_lap_count >= 0)
             {
                 winner_vote.m_num_laps = ServerConfig::m_fixed_lap_count;
                 Log::info("ServerLobby", "Enforcing %d lap race", (int)ServerConfig::m_fixed_lap_count);
@@ -1697,6 +1697,19 @@ void ServerLobby::asynchronousUpdate()
                 ServerConfig::m_flag_deactivated_time);
             RaceManager::get()->setFlagDeactivatedTicks(flag_deactivated_time);
             configRemoteKart(players, 0);
+
+            // Spectators who don't have the played track will stay in the lobby
+            auto peers = STKHost::get()->getPeers();
+            for (auto peer : peers)
+            {
+                bool badSpectator = peer->alwaysSpectate() && peer->getClientAssets().second.count(winner_vote.m_track_name) == 0;
+                if (badSpectator)
+                {
+                    peer->setAlwaysSpectate(AlwaysSpectateMode::ASM_FULL);
+                    peer->setWaitingForGame(true);
+                    m_peers_ready.erase(peer);
+                }
+            }
 
             // Reset for next state usage
             resetPeersReady();
@@ -2587,9 +2600,12 @@ void ServerLobby::startSelection(const Event *event)
     // Disable always spectate peers if no players join the game
     if (!has_peer_plays_game)
     {
-        for (STKPeer* peer : always_spectate_peers)
-            peer->setAlwaysSpectate(ASM_NONE);
-        always_spectate_peers.clear();
+        Log::warn("ServerLobby",
+            "An attempt to start a race while no one is able to race.");
+        return;
+        //for (STKPeer* peer : always_spectate_peers)
+        //    peer->setAlwaysSpectate(ASM_NONE);
+        //always_spectate_peers.clear();
     }
     else
     {
