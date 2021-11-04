@@ -5937,7 +5937,7 @@ void ServerLobby::handleServerCommand(Event* event,
     else if (StringUtils::startsWith(cmd, "kick"))
     {
 	std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
-        if (m_server_owner.lock() != peer and !isVIP(peer) and !isTrusted(peer))
+        if (m_server_owner.lock() != peer && !isVIP(peer) && !isTrusted(peer))
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -5971,7 +5971,7 @@ void ServerLobby::handleServerCommand(Event* event,
     {
 	std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
 	std::string msg;
-        if (!isVIP(peer) and !isTrusted(peer) )
+        if (!isVIP(peer) && !isTrusted(peer) )
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -6027,7 +6027,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
     else if (argv[0] == "game")
     {
-	if (!isVIP(peer) and !isTrusted(peer) )
+	if (!isVIP(peer) && !isTrusted(peer) )
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -6103,7 +6103,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
     else if (argv[0] == "lobby")
     {
-	if (!isVIP(peer) and !isTrusted(peer) )
+	if (!isVIP(peer) && !isTrusted(peer) )
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -6124,7 +6124,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
     else if (argv[0] == "stop")
     {
-        if (!isVIP(peer) and !isTrusted(peer) )
+        if (!isVIP(peer) && !isTrusted(peer) )
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -6145,7 +6145,7 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (argv[0] == "go")
     {
-         if (!isVIP(peer) and !isTrusted(peer) )
+         if (!isVIP(peer) && !isTrusted(peer) )
          {
              NetworkString* chat = getNetworkString();
              chat->addUInt8(LE_CHAT);
@@ -6166,7 +6166,7 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (argv[0] == "init")
     {
-         if (!isVIP(peer) and !isTrusted(peer) )
+         if (!isVIP(peer) && !isTrusted(peer) )
          {
              NetworkString* chat = getNetworkString();
              chat->addUInt8(LE_CHAT);
@@ -6642,7 +6642,7 @@ bool ServerLobby::canRace(STKPeer* peer) const
 
     if (ServerConfig::m_supertournament)
     {
-        if (m_red_team.count(username)==0 and m_blue_team.count(username)==0) return false;
+        if (m_red_team.count(username)==0 && m_blue_team.count(username)==0) return false;
     }
 
     return true;
