@@ -2494,7 +2494,7 @@ void ServerLobby::startSelection(const Event *event)
         std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
         if (ServerConfig::m_owner_less)
         {  
-	    if (!canRace(peer))
+	        if (!canRace(peer))
             {
                 if (m_set_field == "" || serverAndPeerHaveTrack(peer, m_set_field))
                 {
@@ -2512,12 +2512,12 @@ void ServerLobby::startSelection(const Event *event)
                     return;
                 }
             }
-	    else
-	    {
+	        else
+	        {
                 m_peers_ready.at(event->getPeerSP()) = !m_peers_ready.at(event->getPeerSP());
                 updatePlayerList();
                 return;
-	    }
+	        }
         }
         if (event->getPeerSP() != m_server_owner.lock())
         {
@@ -2572,11 +2572,15 @@ void ServerLobby::startSelection(const Event *event)
                 continue;
             }
         }
+
+        if (peer->alwaysSpectate())
+        {
+            always_spectate_peers.insert(peer.get());
+            continue;
+        }
         peer->eraseServerKarts(m_available_kts.first, karts_erase);
         peer->eraseServerTracks(m_available_kts.second, tracks_erase);
-        if (peer->alwaysSpectate())
-            always_spectate_peers.insert(peer.get());
-        else if (!peer->isAIPeer())
+        if (!peer->isAIPeer())
             has_peer_plays_game = true;
     }
 
@@ -2712,7 +2716,7 @@ void ServerLobby::startSelection(const Event *event)
         else if (m_game_mode == 7 || m_game_mode == 8) // free for all, capture the flag
             m_available_kts.second.insert("stadium");
         
-	else
+        else
             m_available_kts.second.insert("volcano_island"); // race
     }
 
