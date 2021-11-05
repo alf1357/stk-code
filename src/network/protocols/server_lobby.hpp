@@ -257,6 +257,8 @@ private:
     // Calculated before each game started
     unsigned m_ai_count;
 
+    std::map<std::string, std::pair<std::string, std::string>> m_faked_players; // m_faked_players[username] = (fake_username, fake_country_code)
+
     // connection management
     void clientDisconnected(Event* event);
     void connectionRequested(Event* event);

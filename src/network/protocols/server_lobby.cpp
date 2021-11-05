@@ -826,6 +826,16 @@ void ServerLobby::handleChat(Event* event)
     core::stringw message;
     event->data().decodeString16(&message, 360/*max_len*/);
 
+    std::string message_utf8 = StringUtils::wideToUtf8(message);
+    for (auto player : m_faked_players)
+    {
+        if (StringUtils::startsWith(message_utf8, player.first))
+        {
+            message = StringUtils::utf8ToWide(player.second.first) + message.subString(player.first.length(), message.size() - player.first.length());
+            break;
+        }
+    }
+
     KartTeam target_team = KART_TEAM_NONE;
     if (event->data().size() > 0)
         target_team = (KartTeam)event->data().getUInt8();
@@ -3944,35 +3954,53 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
     {
         core::stringw name;
         data.decodeStringW(&name);
-        
-	name = i == 0 && !online_name.empty() && !peer->isAIPeer() ? online_name : name;
-        std::string utf8_name = StringUtils::wideToUtf8(name) + " " + utf8_online_name;
-	Log::info("",utf8_name.c_str());
-        
-	// 30 to make it consistent with stk-addons max user name length
+
+        name = i == 0 && !online_name.empty() && !peer->isAIPeer() ? online_name : name;
+        std::string utf8_name = StringUtils::wideToUtf8(name);
+        std::string log_name = utf8_name + " " + utf8_online_name;
+        Log::info("", log_name.c_str());
+
+        if (m_faked_players.count(utf8_name))
+        {
+            // country code
+            if (m_faked_players[utf8_name].second != "")
+                country_code = m_faked_players[utf8_name].second;
+
+            // player name
+            if (m_faked_players[utf8_name].first != "")
+            {
+                utf8_name = m_faked_players[utf8_name].first;
+                if (i == 0) utf8_online_name = utf8_name;
+                name = StringUtils::utf8ToWide(utf8_name);
+            }
+        }
+
+        // 30 to make it consistent with stk-addons max user name length
         if (name.empty())
             name = L"unnamed";
         else if (name.size() > 30)
             name = name.subString(0, 30);
+
+
         float default_kart_color = data.getFloat();
         HandicapLevel handicap = (HandicapLevel)data.getUInt8();
         auto player = std::make_shared<NetworkPlayerProfile>
-            (peer, i == 0 && !online_name.empty() && !peer->isAIPeer() ?
-            online_name : name,
-            peer->getHostId(), default_kart_color, i == 0 ? online_id : 0,
-            handicap, (uint8_t)i, KART_TEAM_NONE,
-            country_code);
-	if (ServerConfig::m_supertournament)
-	{
-	    if (m_red_team.count(utf8_online_name)){
-		    player->setTeam(KART_TEAM_RED); }
-	    else if (m_blue_team.count(utf8_online_name)) {
-		    player->setTeam(KART_TEAM_BLUE);}
-	    else
-	    {
-	        player->setTeam(KART_TEAM_NONE);
+            (peer, name, peer->getHostId(),
+                default_kart_color, i == 0 ? online_id : 0,
+                handicap, (uint8_t)i, KART_TEAM_NONE,
+                country_code);
+
+	    if (ServerConfig::m_supertournament)
+        {
+            if (m_red_team.count(utf8_online_name)){
+                player->setTeam(KART_TEAM_RED); }
+	        else if (m_blue_team.count(utf8_online_name)) {
+                player->setTeam(KART_TEAM_BLUE);}
+            else
+            {
+                player->setTeam(KART_TEAM_NONE);
             }
-	}
+	    }
         if (ServerConfig::m_team_choosing && !(ServerConfig::m_supertournament))
         {
             KartTeam cur_team = KART_TEAM_NONE;
@@ -6454,6 +6482,64 @@ void ServerLobby::handleServerCommand(Event* event,
         }
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
+    }
+    else if (argv[0] == "fake")
+    {
+        if (isVIP(peer))
+        {
+            if (argv.size() < 3 || argv.size() > 4)
+            {
+                std::string msg = "Format: /fake [player_name] [fake_player_name] (fake_country_code)";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+            std::string fake_name = argv[2];
+            std::string fake_country_code = "";
+            if (argv.size() == 4)
+            {
+                fake_country_code = argv[3];
+                if (fake_country_code.length() != 2)
+                {
+                    std::string msg = "Country codes must have two capital letters.";
+                    sendStringToPeer(msg, peer);
+                    return;
+                }
+            }
+            std::string original_name = argv[1];
+            m_faked_players[original_name] = std::pair<std::string, std::string>(fake_name, fake_country_code);
+            std::string msg = "Player " + original_name + " will play as " + fake_name + " with country " + fake_country_code;
+            sendStringToPeer(msg, peer);
+            return;
+        }
+    }
+    else if (argv[0] == "unfake")
+    {
+        if (isVIP(peer))
+        {
+            if (argv.size() != 2)
+            {
+                std::string msg = "Format: /unfake [player_name]";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+            std::string player_name = argv[1];
+            if (player_name == "all")
+            {
+                m_faked_players.clear();
+                std::string msg = "No player is faked any more.";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+            else
+            {
+                if (m_faked_players.count(player_name))
+                    m_faked_players.erase(player_name);
+
+                std::string msg = player_name + " is not faked any more.";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+        }
     }
     else if (argv[0] == "mute")
     {
