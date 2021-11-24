@@ -2304,6 +2304,7 @@ void ServerLobby::update(int ticks)
         // Enable all tracks and karts again
         m_set_kart.clear();
         m_set_field = "";
+	ServerConfig::m_fixed_lap_count = -1;
 
         // Reset for next state usage
         resetPeersReady();
@@ -2790,7 +2791,7 @@ void ServerLobby::startSelection(const Event *event)
                 if (m_default_vote->m_num_laps > 15)
                     m_default_vote->m_num_laps = (uint8_t)7;
             }
-            m_default_vote->m_reverse = rg.get(2) == 0;
+            m_default_vote->m_reverse = 0; // unable random distribution of items
             break;
         }
         default:
@@ -4439,6 +4440,7 @@ void ServerLobby::handlePlayerVote(Event* event)
     }
     else if (RaceManager::get()->isSoccerMode())
     {
+        vote.m_reverse = false;
         if (m_game_setup->isSoccerGoalTarget())
         {
             if (ServerConfig::m_auto_game_time_ratio > 0.0f)
@@ -4446,7 +4448,7 @@ void ServerLobby::handlePlayerVote(Event* event)
                 vote.m_num_laps = (uint8_t)(ServerConfig::m_auto_game_time_ratio *
                                             UserConfigParams::m_num_goals);
             }
-            else if (vote.m_num_laps > 10)
+            else if (vote.m_num_laps > 10 || vote.m_num_laps < 5)  //prevent too low limit
                 vote.m_num_laps = (uint8_t)5;
         }
         else
@@ -4456,7 +4458,7 @@ void ServerLobby::handlePlayerVote(Event* event)
                 vote.m_num_laps = (uint8_t)(ServerConfig::m_auto_game_time_ratio *
                                             UserConfigParams::m_soccer_time_limit);
             }
-            else if (vote.m_num_laps > 15)
+            else if (vote.m_num_laps > 15 || vote.m_num_laps < 5) //prevent too low limit
                 vote.m_num_laps = (uint8_t)7;
         }
     }
