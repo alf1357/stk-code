@@ -259,6 +259,12 @@ private:
 
     std::map<std::string, std::pair<std::string, std::string>> m_faked_players; // m_faked_players[username] = (fake_username, fake_country_code)
 
+    // Player queue
+    int m_player_queue_limit = -1;
+    bool m_player_queue_rotatable = false;
+    std::vector<std::string> m_player_queue;
+    std::map<std::string, int> m_player_queue_history;
+
     // connection management
     void clientDisconnected(Event* event);
     void connectionRequested(Event* event);
@@ -420,6 +426,13 @@ public:
     bool isVIP(STKPeer* peer) const;
     bool isTrusted(std::shared_ptr<STKPeer>& peer) const;
     bool isTrusted(STKPeer* peer) const;
+
+    // Player queue
+    int getQueueIndex(std::string& username) const;
+    irr::core::stringw getQueueNumberIcon(std::string& username) const;
+    void addDeletePlayersFromQueue(std::shared_ptr<STKPeer>& peer, bool add);
+    void rotatePlayerQueue();
+
     std::set<std::string> m_vip_players;
     std::set<std::string> m_trusted_players;
     std::set<std::string> m_red_team;

@@ -467,6 +467,13 @@ namespace ServerConfig
         "If true this server will allow AI instance to be connected from "
         "anywhere. (other than LAN network only)"));
 
+    SERVER_CFG_PREFIX IntServerConfigParam m_player_queue_limit
+        SERVER_CFG_DEFAULT(IntServerConfigParam(-1,
+            "player-queue-limit",
+            "Maximum number of players that can play on the server. "
+            "Other players are in a rotating queue as spectators. "
+            "Negative number for deactivating the queue"));
+
     // ========================================================================
     /** Server version, will be advanced if there are protocol changes. */
     static const uint32_t m_server_version = 6;

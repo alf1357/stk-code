@@ -258,6 +258,7 @@ ServerLobby::ServerLobby() : LobbyProtocol()
     for (auto player : blue_team) m_blue_team.insert(player);
     m_player_reports_table_exists = false;
     m_logfile_name = ServerConfig::m_logfile_name;
+    m_player_queue_limit = ServerConfig::m_player_queue_limit;
     initDatabase();
 }   // ServerLobby
 
@@ -1888,7 +1889,8 @@ void ServerLobby::liveJoinRequest(Event* event)
                 break;
             used_id.push_back(id);
         }
-        if (used_id.size() != peer->getPlayerProfiles().size())
+        bool queuePlayerLimitReached = m_player_queue_limit > 0 && m_peers_ready.size() >= m_player_queue_limit;
+        if (used_id.size() != peer->getPlayerProfiles().size() || queuePlayerLimitReached)
         {
             for (unsigned i = 0; i < peer->getPlayerProfiles().size(); i++)
                 peer->getPlayerProfiles()[i]->setKartName("");
@@ -2270,6 +2272,8 @@ void ServerLobby::update(int ticks)
     case SET_PUBLIC_ADDRESS:
     case REGISTER_SELF_ADDRESS:
     case WAITING_FOR_START_GAME:
+        rotatePlayerQueue(); // in case that the game has been cancelled
+        break;
     case WAIT_FOR_WORLD_LOADED:
     case WAIT_FOR_RACE_STARTED:
     {
@@ -2282,6 +2286,11 @@ void ServerLobby::update(int ticks)
         break;
     case LOAD_WORLD:
         Log::info("ServerLobbyRoom", "Starting the race loading.");
+        if (m_player_queue_limit > 0)
+        {
+            m_player_queue_rotatable = true;
+            m_player_queue_history.clear();
+        }
         // This will create the world instance, i.e. load track and karts
         loadWorld();
         m_state = WAIT_FOR_WORLD_LOADED;
@@ -2319,6 +2328,7 @@ void ServerLobby::update(int ticks)
         outfile << "GAME_END\n" ;
         break;
     case RESULT_DISPLAY:
+        rotatePlayerQueue();
         if (checkPeersReady(true/*ignore_ai_peer*/) ||
             (int64_t)StkTime::getMonoTimeMs() > m_timeout.load())
         {
@@ -3528,6 +3538,13 @@ void ServerLobby::clientDisconnected(Event* event)
     msg->addUInt8(LE_PLAYER_DISCONNECTED);
     msg->addUInt8((uint8_t)players_on_peer.size())
         .addUInt32(event->getPeer()->getHostId());
+
+    if (m_player_queue_limit > 0)
+    {
+        auto peer_sp = event->getPeerSP();
+        addDeletePlayersFromQueue(peer_sp, false);
+    }
+
     for (auto p : players_on_peer)
     {
         std::string name = StringUtils::wideToUtf8(p->getName());
@@ -4022,6 +4039,9 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
 
     peer->setValidated(true);
 
+    if (m_player_queue_limit > 0)
+        addDeletePlayersFromQueue(peer, true);
+
     // send a message to the one that asked to connect
     NetworkString* server_info = getNetworkString();
     server_info->setSynchronous(true);
@@ -4266,22 +4286,27 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
         .addUInt8((uint8_t)all_profiles.size());
     for (auto profile : all_profiles)
     {
+        auto profile_name = profile->getName();
+        auto user_name = StringUtils::wideToUtf8(profile_name);
+
         // get OS information
         auto version_os = StringUtils::extractVersionOS(profile->getPeer()->getUserVersion());
         std::string os_type_str = version_os.second;
         // if mobile OS
         if (os_type_str == "iOS" || os_type_str == "Android")
-        { // Add a Mobile emoji for mobile OS
-            pl->addUInt32(profile->getHostId()).addUInt32(profile->getOnlineId())
-                .addUInt8(profile->getLocalPlayerId())
-                .encodeString(StringUtils::utf32ToWide({0x1F4F1}) + profile->getName());
-        }
-        else
+            // Add a Mobile emoji for mobile OS
+            profile_name = StringUtils::utf32ToWide({ 0x1F4F1 }) + profile_name;
+
+        if (m_player_queue_limit > 0)
         {
-            pl->addUInt32(profile->getHostId()).addUInt32(profile->getOnlineId())
-                .addUInt8(profile->getLocalPlayerId())
-                .encodeString(profile->getName());
+            // Add a symbol for the queue position
+            stringw symbol = getQueueNumberIcon(user_name);
+            profile_name = symbol + profile_name;
         }
+
+        pl->addUInt32(profile->getHostId()).addUInt32(profile->getOnlineId())
+            .addUInt8(profile->getLocalPlayerId())
+            .encodeString(profile_name);
 
         std::shared_ptr<STKPeer> p = profile->getPeer();
         uint8_t boolean_combine = 0;
@@ -5848,6 +5873,10 @@ void ServerLobby::handleServerCommand(Event* event,
         }
         else
             peer->setAlwaysSpectate(ASM_NONE);
+
+        if (m_player_queue_limit > 0)
+            addDeletePlayersFromQueue(peer, argv[1] == "0");
+
         updatePlayerList();
     }
     else if (argv[0] == "listserveraddon")
@@ -6485,6 +6514,26 @@ void ServerLobby::handleServerCommand(Event* event,
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
     }
+    else if (argv[0] == "queue")
+    {
+        if (!isVIP(peer) && !(isTrusted(peer)))
+        {
+            std::string msg = "You cannot change queue length";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+        if (argv.size() == 1)
+        {
+            std::string msg = "Please use the command in the form /queue [number]";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+        if (std::stoi(argv[1]) < 2) m_player_queue_limit = -1;
+        else m_player_queue_limit = std::stoi(argv[1]);
+        updatePlayerList();
+        std::string message = "The host or server owner changed the queue length to " + argv[1];
+        sendStringToAllPeers(message);
+    }
     else if (argv[0] == "fake")
     {
         if (isVIP(peer))
@@ -6683,7 +6732,103 @@ bool ServerLobby::isTrusted(STKPeer * peer) const
 
     return m_vip_players.count(username) || m_trusted_players.count(username);
 }  // isTrusted
+//-----------------------------------------------------------------------------
+int ServerLobby::getQueueIndex(std::string& username) const
+{
+    auto it = std::find(m_player_queue.begin(), m_player_queue.end(), username);
+    if (it == m_player_queue.end())
+        return -1;
+    else
+        return std::distance(m_player_queue.begin(), it);
+}
 
+stringw ServerLobby::getQueueNumberIcon(std::string& username) const
+{
+    int queueIndex = getQueueIndex(username);
+    if (queueIndex < 0)
+        return L"";
+
+    if (queueIndex < m_player_queue_limit && queueIndex < 20)
+    {
+        stringw icon = StringUtils::utf32ToWide({ 0x2460 + (char32_t)queueIndex });
+        return icon;
+    }
+    else
+    {
+        std::wstring icon = L"#" + std::to_wstring(queueIndex + 1) + L" ";
+        return icon.c_str();
+    }
+}
+//-----------------------------------------------------------------------------
+void ServerLobby::addDeletePlayersFromQueue(std::shared_ptr<STKPeer>& peer, bool add)
+{
+    if (peer == NULL) return;
+
+    for (auto& player : peer->getPlayerProfiles())
+    {
+        std::string username = StringUtils::wideToUtf8(player->getName());
+
+        if (add) // add players to queue
+        {
+            if (std::find(m_player_queue.begin(), m_player_queue.end(), username) == m_player_queue.end())
+            {
+                if (m_player_queue_history.count(username))
+                {
+                    int new_index = std::min(m_player_queue_history[username], (int)m_player_queue.size());
+                    if (m_player_queue_rotatable && m_player_queue.size() > new_index && m_player_queue[new_index] == "$free$")
+                        m_player_queue[new_index] = username;
+                    else
+                        m_player_queue.insert(m_player_queue.begin() + new_index, username);
+                }
+                else
+                {
+                    m_player_queue.push_back(username);
+                }
+            }
+        }
+        else // delete players from queue
+        {
+            int queueIndex = getQueueIndex(username);
+            if (queueIndex != -1)
+            {
+                m_player_queue_history[username] = queueIndex;
+                if (m_player_queue_rotatable && queueIndex < m_player_queue_limit)
+                    m_player_queue[queueIndex] = "$free$";
+                else
+                    m_player_queue.erase(m_player_queue.begin() + queueIndex);
+            }
+        }
+    }
+}
+//-----------------------------------------------------------------------------
+void ServerLobby::rotatePlayerQueue()
+{
+    if (!(m_player_queue_limit > 0 && m_player_queue_rotatable))
+        return;
+
+    // Rotating the queue
+    if (m_player_queue.size() <= m_player_queue_limit && m_player_queue.size() > 1)
+    {
+        m_player_queue.insert(m_player_queue.begin(), m_player_queue.back());
+        m_player_queue.pop_back();
+    }
+    else
+    {
+        for (int i = 0; i < m_player_queue_limit; i++)
+            m_player_queue.push_back(m_player_queue[i]);
+
+        m_player_queue.erase(m_player_queue.begin(), m_player_queue.begin() + m_player_queue_limit);
+    }
+
+    // Removing all placeholders
+    m_player_queue.erase(std::remove(m_player_queue.begin(), m_player_queue.end(), "$free$"), m_player_queue.end());
+
+    m_player_queue_history.clear();
+    m_player_queue_rotatable = false;
+    updatePlayerList();
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void ServerLobby::sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const
 {
     NetworkString* chat = getNetworkString();
@@ -6727,25 +6872,35 @@ bool ServerLobby::canRace(std::shared_ptr<STKPeer>& peer) const
 //-----------------------------------------------------------------------------
 bool ServerLobby::canRace(STKPeer* peer) const
 {
-  if (peer == NULL || peer->getPlayerProfiles().size() == 0) return false;
-  std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+    if (peer == NULL || peer->getPlayerProfiles().size() == 0) return false;
+    std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
 
-  // Players who do not have the addon defined via /setfield are not allowed to play.
-  if (m_set_field != "")
-  {
-      bool has_addon = false;
-      const auto& kt = peer->getClientAssets();
+    // Players who do not have the addon defined via /setfield are not allowed to play.
+    if (m_set_field != "")
+    {
+        bool has_addon = false;
+        const auto& kt = peer->getClientAssets();
 
-      for (auto& track : kt.second)
-      {
-          if (track == m_set_field)
-          {
-              has_addon = true;
-              break;
-          }
-      }
+        for (auto& track : kt.second)
+        {
+            if (track == m_set_field)
+            {
+                has_addon = true;
+                break;
+            }
+        }
 
-      if (has_addon == false) return false;
+        if (has_addon == false) return false;
+    }
+
+    if (m_player_queue_limit > 0)
+    {
+        for (auto player : peer->getPlayerProfiles())
+        {
+            std::string player_username = StringUtils::wideToUtf8(player->getName());
+            int queueIndex = getQueueIndex(player_username);
+            if (queueIndex < 0 || queueIndex >= m_player_queue_limit) return false;
+        }
     }
 
     if (ServerConfig::m_supertournament)
