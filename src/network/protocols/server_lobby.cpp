@@ -1840,6 +1840,9 @@ bool ServerLobby::worldIsActive() const
  */
 void ServerLobby::rejectLiveJoin(STKPeer* peer, BackLobbyReason blr)
 {
+    for (auto player : peer->getPlayerProfiles())
+        m_pending_live_joiners.erase(StringUtils::wideToUtf8(player->getName()));
+
     NetworkString* reset = getNetworkString(2);
     reset->setSynchronous(true);
     reset->addUInt8(LE_BACK_LOBBY).addUInt8(blr);
@@ -1889,7 +1892,15 @@ void ServerLobby::liveJoinRequest(Event* event)
                 break;
             used_id.push_back(id);
         }
-        bool queuePlayerLimitReached = m_player_queue_limit > 0 && m_peers_ready.size() >= m_player_queue_limit;
+
+        int num_players_in_game = 0;
+        for (auto p : m_peers_ready)
+            if (auto peer = p.first.lock())
+                if (!peer->isSpectator())
+                    num_players_in_game++;
+        bool queuePlayerLimitReached = m_player_queue_limit > 0 
+            && num_players_in_game + m_pending_live_joiners.size() >= m_player_queue_limit;
+
         if (used_id.size() != peer->getPlayerProfiles().size() || queuePlayerLimitReached)
         {
             for (unsigned i = 0; i < peer->getPlayerProfiles().size(); i++)
@@ -1910,6 +1921,8 @@ void ServerLobby::liveJoinRequest(Event* event)
             Log::info("ServerLobby", "%s live joining with reserved kart id %d.",
                 peer->getAddress().toString().c_str(), id);
             peer->addAvailableKartID(id);
+            for (auto player : peer->getPlayerProfiles())
+                m_pending_live_joiners.insert(StringUtils::wideToUtf8(player->getName()));
         }
     }
     else
@@ -2084,6 +2097,8 @@ void ServerLobby::finishedLoadingLiveJoinClient(Event* event)
         addLiveJoiningKart(id, rki, m_last_live_join_util_ticks);
         Log::info("ServerLobby", "%s succeeded live-joining with kart id %d.",
             peer->getAddress().toString().c_str(), id);
+        for (auto player : peer->getPlayerProfiles())
+            m_pending_live_joiners.erase(StringUtils::wideToUtf8(player->getName()));
     }
     if (peer->getAvailableKartIDs().empty())
     {
@@ -2286,6 +2301,7 @@ void ServerLobby::update(int ticks)
         break;
     case LOAD_WORLD:
         Log::info("ServerLobbyRoom", "Starting the race loading.");
+        m_pending_live_joiners.clear();
         if (m_player_queue_limit > 0)
         {
             m_player_queue_rotatable = true;
@@ -3549,6 +3565,7 @@ void ServerLobby::clientDisconnected(Event* event)
     {
         std::string name = StringUtils::wideToUtf8(p->getName());
         msg->encodeString(name);
+        m_pending_live_joiners.erase(name);
         Log::info("ServerLobby", "%s disconnected", name.c_str());
     }
 
