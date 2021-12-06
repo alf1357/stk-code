@@ -63,6 +63,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <iterator>
 
 
@@ -828,6 +829,11 @@ void ServerLobby::handleChat(Event* event)
     event->data().decodeString16(&message, 360/*max_len*/);
 
     std::string message_utf8 = StringUtils::wideToUtf8(message);
+    Log::info("ServerLobbyChat", message_utf8.c_str());
+    message_utf8 = std::regex_replace(message_utf8, std::regex("Frank"), "Peter");
+    message_utf8 = std::regex_replace(message_utf8, std::regex("frank"), "peter");
+    message = StringUtils::utf8ToWide(message_utf8);
+
     for (auto player : m_faked_players)
     {
         if (StringUtils::startsWith(message_utf8, player.first))
@@ -6354,7 +6360,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
         if (found)
         {
-            if (!isVIP(peer) || !isTrusted(peer)) return;
+            if (!isVIP(peer) && !isTrusted(peer)) return;
 
             if (soccer_field_id == "all")
             {
@@ -6420,7 +6426,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
         if (serverHasKart || kart_name == "all")
         {
-            if (!isVIP(peer) || !isTrusted(peer)) return;
+            if (!isVIP(peer) && !isTrusted(peer)) return;
 
             if (kart_name == "all")
             {
