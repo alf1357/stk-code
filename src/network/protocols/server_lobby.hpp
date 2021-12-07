@@ -258,6 +258,7 @@ private:
     unsigned m_ai_count;
 
     std::map<std::string, std::pair<std::string, std::string>> m_faked_players; // m_faked_players[username] = (fake_username, fake_country_code)
+    std::set<std::string> m_muted_players;
 
     // Player queue
     int m_player_queue_limit = -1;

@@ -253,6 +253,8 @@ ServerLobby::ServerLobby() : LobbyProtocol()
     for (auto player : vip_players) m_vip_players.insert(player);
     std::vector<std::string> trusted_players = StringUtils::split(ServerConfig::m_trusted_players, ' ');
     for (auto player : trusted_players) m_trusted_players.insert(player);
+    std::vector<std::string> muted_players = StringUtils::split(ServerConfig::m_muted_players, ' ');
+    for (auto player : muted_players) m_muted_players.insert(player);
     std::vector<std::string> red_team = StringUtils::split(ServerConfig::m_red_team, ' ');
     for (auto player : red_team) m_red_team.insert(player);
     std::vector<std::string> blue_team = StringUtils::split(ServerConfig::m_blue_team, ' ');
@@ -829,19 +831,21 @@ void ServerLobby::handleChat(Event* event)
     event->data().decodeString16(&message, 360/*max_len*/);
 
     std::string message_utf8 = StringUtils::wideToUtf8(message);
-    Log::info("ServerLobbyChat", message_utf8.c_str());
-    message_utf8 = std::regex_replace(message_utf8, std::regex("Frank"), "Peter");
-    message_utf8 = std::regex_replace(message_utf8, std::regex("frank"), "peter");
-    message = StringUtils::utf8ToWide(message_utf8);
+    std::string message_sender = StringUtils::split(message_utf8, ':')[0];
+    std::string message_text = message_utf8.substr(message_sender.length(), message_utf8.length());
 
-    for (auto player : m_faked_players)
-    {
-        if (StringUtils::startsWith(message_utf8, player.first))
-        {
-            message = StringUtils::utf8ToWide(player.second.first) + message.subString(player.first.length(), message.size() - player.first.length());
-            break;
-        }
-    }
+    bool muted = m_muted_players.find(message_sender) != m_muted_players.end();
+
+    std::string log_tag = muted ? "ServerLobbyChat [muted]" : "ServerLobbyChat";
+    Log::info(log_tag.c_str(), message_utf8.c_str());
+
+    message_text = std::regex_replace(message_text, std::regex("Frank"), "Peter");
+    message_text = std::regex_replace(message_text, std::regex("frank"), "peter");
+
+    if (m_faked_players.find(message_sender) != m_faked_players.end())
+        message_sender = m_faked_players[message_sender].first;
+    
+    message = StringUtils::utf8ToWide(message_sender + message_text);
 
     KartTeam target_team = KART_TEAM_NONE;
     if (event->data().size() > 0)
@@ -862,9 +866,11 @@ void ServerLobby::handleChat(Event* event)
         core::stringw sender_name =
             event->getPeer()->getPlayerProfiles()[0]->getName();
         STKHost::get()->sendPacketToAllPeersWith(
-            [game_started, sender_in_game, target_team, sender_name, this]
+            [game_started, sender_in_game, target_team, sender_name, muted, this]
             (STKPeer* p)
             {
+                if (muted)
+                    return sender_name == p->getPlayerProfiles()[0]->getName();
                 if (game_started)
                 {
                     if (p->isWaitingForGame() && !sender_in_game)
@@ -5851,6 +5857,8 @@ void ServerLobby::handleServerCommand(Event* event,
     auto argv = StringUtils::split(cmd, ' ');
     if (argv.size() == 0)
         return;
+    std::string peer_username = StringUtils::wideToUtf8(
+        peer->getPlayerProfiles()[0]->getName());
     if (argv[0] == "spectate")
     {
         if (m_game_setup->isGrandPrix() || !ServerConfig::m_live_players)
@@ -6717,6 +6725,46 @@ unmute_error:
         }
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
+    }
+    else if (argv[0] == "xmute")
+    {
+        if (isTrusted(peer))
+        {
+            if (argv.size() != 2)
+            {
+                std::string msg = "Format: /xmute [player_name]";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+
+            std::string player_name = argv[1];
+            m_muted_players.insert(player_name);
+
+            Log::info("ServerLobby", "Player %s has been muted by %s", player_name.c_str(), peer_username.c_str());
+            std::string msg = "Player " + player_name + " is now muted.";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+    }
+    else if (argv[0] == "xunmute")
+    {
+        if (isTrusted(peer))
+        {
+            if (argv.size() != 2)
+            {
+                std::string msg = "Format: /xunmute [player_name]";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+
+            std::string player_name = argv[1];
+            m_muted_players.erase(player_name);
+
+            Log::info("ServerLobby", "Player %s has been unmuted by %s", player_name.c_str(), peer_username.c_str());
+            std::string msg = "Player " + player_name + " is now unmuted.";
+            sendStringToPeer(msg, peer);
+            return;
+        }
     }
     else
     {

@@ -104,6 +104,9 @@ namespace ServerConfig
 
     SERVER_CFG_PREFIX StringServerConfigParam m_trusted_players
         SERVER_CFG_DEFAULT(StringServerConfigParam("alfix3", "trusted-players", "Name of trusted players."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_muted_players
+        SERVER_CFG_DEFAULT(StringServerConfigParam("", "muted-players", "Name of permanently muted players, separated by spaces"));
     
     SERVER_CFG_PREFIX StringServerConfigParam m_red_team
         SERVER_CFG_DEFAULT(StringServerConfigParam("", "red-team", "Name of red players."));
