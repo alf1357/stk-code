@@ -3702,10 +3702,10 @@ bool ServerLobby::handleAssets(const NetworkString& ns, STKPeer* peer)
         }
     }
 
-    if (karts_erase.size() == m_available_kts.first.size() ||
+    if (false &&(karts_erase.size() == m_available_kts.first.size() ||
         tracks_erase.size() == m_available_kts.second.size() ||
         okt < ServerConfig::m_official_karts_threshold ||
-        ott < ServerConfig::m_official_tracks_threshold)
+        ott < ServerConfig::m_official_tracks_threshold)) // this block is trash
     {
         NetworkString *message = getNetworkString(2);
         message->setSynchronous(true);
@@ -5438,6 +5438,7 @@ void ServerLobby::handleServerConfiguration(Event* event)
         }
         if (tracks_erase.size() == m_available_kts.second.size())
         {
+            continue; // this loop is trash
             NetworkString *message = getNetworkString(2);
             message->setSynchronous(true);
             message->addUInt8(LE_CONNECTION_REFUSED)
@@ -5448,6 +5449,7 @@ void ServerLobby::handleServerConfiguration(Event* event)
             delete message;
             Log::verbose("ServerLobby",
                 "Player has incompatible tracks for new game mode.");
+	    
         }
     }
     NetworkString* server_info = getNetworkString();
