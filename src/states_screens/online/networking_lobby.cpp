@@ -782,7 +782,7 @@ void NetworkingLobby::eventCallback(Widget* widget, const std::string& name,
             return;
         new NetworkPlayerDialog(host_online_local_ids[0],
             host_online_local_ids[1], host_online_local_ids[2],
-            lp.m_user_name, lp.m_country_code, m_allow_change_team,
+            lp.m_user_name, lp.m_country_code, !lp.isSpectator(),
             lp.m_handicap);
     }   // click on a user
     else if (name == m_send_button->m_properties[PROP_ID])
