@@ -1,0 +1,14 @@
+#include "glad/gl.h"
+#include <network/protocols/global_log.hpp>
+#include <network/server_config.hpp>
+
+void GlobalLog::open_Log(std::string log_name)
+{
+    if (log_name=="posLog")
+    {
+        if(GlobalLog::outfile_posLog.is_open()) return;
+        else GlobalLog::outfile_posLog.open(ServerConfig::m_pos_log_path)
+    }
+}
+
+void GlobalLog::close_Log(std::string)

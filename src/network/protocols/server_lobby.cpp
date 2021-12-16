@@ -41,6 +41,7 @@
 #include "network/protocols/connect_to_peer.hpp"
 #include "network/protocols/game_protocol.hpp"
 #include "network/protocols/game_events_protocol.hpp"
+#include "network/protocols/global_log.hpp"
 #include "network/race_event_manager.hpp"
 #include "network/server_config.hpp"
 #include "network/socket_address.hpp"
@@ -260,7 +261,6 @@ ServerLobby::ServerLobby() : LobbyProtocol()
     std::vector<std::string> blue_team = StringUtils::split(ServerConfig::m_blue_team, ' ');
     for (auto player : blue_team) m_blue_team.insert(player);
     m_player_reports_table_exists = false;
-    m_logfile_name = ServerConfig::m_logfile_name;
     m_player_queue_limit = ServerConfig::m_player_queue_limit;
     initDatabase();
 }   // ServerLobby
@@ -2292,7 +2292,6 @@ void ServerLobby::update(int ticks)
     }
 
     handlePlayerDisconnection();
-    std::ofstream outfile;
 
     switch (m_state.load())
     {
@@ -2351,9 +2350,8 @@ void ServerLobby::update(int ticks)
         m_state = RESULT_DISPLAY;
         sendMessageToPeers(m_result_ns, /*reliable*/ true);
         Log::info("ServerLobby", "End of game message sent");
-	//outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
-	outfile.open(m_logfile_name, std::ios_base::app);
-        outfile << "GAME_END\n" ;
+	GlobalLog::write_Log("GAME_END\n","goalLog");
+	if(ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_END\n","posLog");
         break;
     case RESULT_DISPLAY:
         rotatePlayerQueue();
@@ -2686,10 +2684,9 @@ void ServerLobby::startSelection(const Event *event)
 
     unsigned max_player = 0;
     STKHost::get()->updatePlayers(&max_player);
-    std::ofstream outfile;
-    //outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
-    outfile.open(m_logfile_name, std::ios_base::app);
-    outfile << "GAME_START\n" ;
+    
+    GlobalLog::write_Log("GAME_START\n","goalLog");
+    if (ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_START\n","posLog");
 
     if (max_player > 10 && (RaceManager::get()->isBattleMode() ||
         RaceManager::get()->isSoccerMode()))
@@ -6167,8 +6164,6 @@ void ServerLobby::handleServerCommand(Event* event,
         int length = 7;
 	ServerConfig::m_fixed_lap_count = length;
         if (argv.size() >= 3) ServerConfig::m_fixed_lap_count = std::stoi(argv[2]);
-        std::ofstream outfile;
-        outfile.open(m_logfile_name, std::ios_base::app);
 
         if (argv[1]=="1")
         {
@@ -6177,7 +6172,7 @@ void ServerLobby::handleServerCommand(Event* event,
 	    m_set_field="icy_soccer_field";
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
             sendStringToAllPeers(msg);
-	    outfile << msg+"\n";
+	    GlobalLog::write_Log( msg+"\n","goalLog");
         }
 	else if (argv[1]=="2")
         {
@@ -6189,7 +6184,7 @@ void ServerLobby::handleServerCommand(Event* event,
             m_available_kts.second.insert("addon_island-soccer");
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
             sendStringToAllPeers(msg);
-	    outfile << msg+"\n";
+	    GlobalLog::write_Log( msg+"\n","goalLog");
         }
 	else if (argv[1]=="3")
         {
@@ -6198,7 +6193,7 @@ void ServerLobby::handleServerCommand(Event* event,
 	    m_set_field="addon_supertournament-field";
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
             sendStringToAllPeers(msg);
-	    outfile << msg+"\n";
+	    GlobalLog::write_Log( msg+"\n","goalLog");
 	}
 	else
 	{
@@ -6983,3 +6978,5 @@ bool ServerLobby::canRace(STKPeer* peer) const
 
     return true;
 }   // canRace
+
+

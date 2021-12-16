@@ -46,11 +46,10 @@
 #include "utils/constants.hpp"
 #include "utils/translation.hpp"
 #include "utils/string_utils.hpp"
+#include "network/protocols/global_log.hpp"
 
 #include <IMeshSceneNode.h>
 #include <numeric>
-#include <iostream>
-#include <fstream>
 #include <string>
 
 //=============================================================================
@@ -291,10 +290,6 @@ void SoccerWorld::init()
     m_goal_target  = RaceManager::get()->getMaxGoal();
     m_goal_sound   = SFXManager::get()->createSoundSource("goal_scored");
 
-    m_pos_log = ServerConfig::m_pos_log;
-    m_logfile_name = ServerConfig::m_logfile_name;
-    m_pos_log_path = ServerConfig::m_pos_log_path;
-
     m_red_ball_hitter = -1;
     m_blue_ball_hitter = -1;
     m_red_hit_ticks = -1;
@@ -441,29 +436,26 @@ void SoccerWorld::update(int ticks)
     WorldWithRank::update(ticks);
     WorldWithRank::updateTrack(ticks);
 
-    /*
     if(m_pos_log)
     {
-        std::ofstream outfile;
-        outfile.open(m_pos_log_path, std::ios_base::app);
         for (unsigned int i = 0; i < m_karts.size(); i++)
         {
-            if (m_xyz_str_count%10!=0) break;
+            //if (m_xyz_str_count%10!=0) break;
             auto xyz_print = m_karts[i]->getXYZ();
             std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
 	    if (xyz_name2.size() < 2) continue;
             std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
-            outfile << xyz_name2 + " " + xyz_str2 +"\n";
+	    GlobalLog::write_Log(xyz_name2 + " " + xyz_str2 +"\n","posLog");
         }
         auto ball_print = getBallPosition();
-        if (m_xyz_str_count%10==0)
+        if (1) //(m_xyz_str_count%10==0)
 	{
             std::string xyz_ball2 = std::to_string(ball_print[0])+" "+std::to_string(ball_print[1])+" "+std::to_string(ball_print[2]);
-            outfile << "p " + xyz_ball2 +"\n";
+	    GlobalLog::write_Log( "p " + xyz_ball2 +"\n","posLog");
 	}
         m_xyz_str_count+=1;
     }
-    */
+    
     if (isGoalPhase())
     {
         for (unsigned int i = 0; i < m_karts.size(); i++)
@@ -572,8 +564,6 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         core::stringw msg;
         std::string player_name = StringUtils::wideToUtf8(sd.m_player);
         std::string team_name = (first_goal ? "red" : "blue");
-        std::ofstream outfile;
-        outfile.open(m_logfile_name, std::ios_base::app);
 	if(stopped) 
 	{
             if (first_goal)
@@ -586,12 +576,12 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         if (sd.m_correct_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
-	    outfile << "goal "+ player_name + " "+team_name+"\n";
+	    GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","goalLog");
 	}
         else
 	{
             msg = _("Oops, %s made an own goal!", sd.m_player);
-	    outfile << "own_goal "+ player_name + " "+team_name+"\n";
+	    GlobalLog::write_Log("own_goal "+ player_name + " "+team_name+"\n","goalLog");
 	}
         if (m_race_gui)
         {

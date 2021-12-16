@@ -33,6 +33,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <fstream>
 
 #ifdef ENABLE_SQLITE3
 #include <sqlite3.h>
@@ -79,8 +80,6 @@ private:
         bool m_tried = false;
     };
     bool m_player_reports_table_exists;
-
-    std::string m_logfile_name;
 
 #ifdef ENABLE_SQLITE3
     sqlite3* m_db;
@@ -397,6 +396,7 @@ public:
     virtual void setup() OVERRIDE;
     virtual void update(int ticks) OVERRIDE;
     virtual void asynchronousUpdate() OVERRIDE;
+
 
     void startSelection(const Event *event=NULL);
     void checkIncomingConnectionRequests();

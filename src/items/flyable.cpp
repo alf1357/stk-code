@@ -51,6 +51,7 @@
 #include "utils/string_utils.hpp"
 #include "utils/vs.hpp"
 #include "network/server_config.hpp"
+#include "network/protocols/global_log.hpp"
 #include <iostream>
 #include <fstream>
 #include <typeinfo>
@@ -62,6 +63,7 @@ float         Flyable::m_st_min_height  [PowerupManager::POWERUP_MAX];
 float         Flyable::m_st_max_height  [PowerupManager::POWERUP_MAX];
 float         Flyable::m_st_force_updown[PowerupManager::POWERUP_MAX];
 Vec3          Flyable::m_st_extend      [PowerupManager::POWERUP_MAX];
+bool Flyable::m_pos_log;
 // ----------------------------------------------------------------------------
 
 Flyable::Flyable(AbstractKart *kart, PowerupManager::PowerupType type,
@@ -206,6 +208,7 @@ void Flyable::init(const XMLNode &node, scene::IMesh *model,
     m_st_max_height[type]   = 1.0f;
     m_st_min_height[type]   = 3.0f;
     m_st_force_updown[type] = 15.0f;
+    m_pos_log = ServerConfig::m_pos_log;
     node.get("speed",           &(m_st_speed[type])       );
     node.get("min-height",      &(m_st_min_height[type])  );
     node.get("max-height",      &(m_st_max_height[type])  );
@@ -460,15 +463,11 @@ bool Flyable::updateAndDelete(int ticks)
     //Vec3 xyz=getBody()->getWorldTransform().getOrigin();
     const Vec3 &xyz=getXYZ();
     
-    /*
-    if (ServerConfig::m_pos_log && m_type==PowerupManager::POWERUP_CAKE)                                     {   
+    if (m_pos_log && m_type==PowerupManager::POWERUP_CAKE)                                     {   
         auto bowlxyz = getXYZ();
         std::string msg = "c "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2]) + "\n";                                                                            
-        std::ofstream outfile;                                                             
-        outfile.open(ServerConfig::m_pos_log_path, std::ios_base::app);
-        outfile << msg ;                                                    
+	GlobalLog::write_Log(msg,"posLog");                                                    
     }
-    */    
 
     // Check if the flyable is outside of the track. If so, explode it.
     const Vec3 *min, *max;

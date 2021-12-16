@@ -29,6 +29,9 @@
 #include "utils/cpp2011.hpp"
 
 #include <irrString.h>
+#include <iostream>
+#include <fstream>
+
 namespace irr
 {
     namespace scene { class IMesh; }
@@ -71,6 +74,9 @@ private:
 
     /* Used in network to restore previous gravity in compressed form. */
     uint32_t          m_compressed_gravity_vector;
+
+    static std::ofstream outfile;
+    static bool m_pos_log;
 
     /** If the flyable is in a cannon, this is the pointer to the cannon
      *  animation. NULL otherwise. */
