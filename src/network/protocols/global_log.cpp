@@ -22,7 +22,7 @@ void GlobalLog::open_Log(std::string log_name)
 
 void GlobalLog::write_Log(std::string text , std::string log_name)
 {
-    open_Log(log_name); //test
+    open_Log(log_name);
     if (log_name=="posLog")
     {
         GlobalLog::outfile_posLog << text;
@@ -30,6 +30,7 @@ void GlobalLog::write_Log(std::string text , std::string log_name)
     else if (log_name=="goalLog")
     {
         GlobalLog::outfile_goalLog << text;
+        close_Log(log_name);
     }
 }
 
