@@ -2352,6 +2352,8 @@ void ServerLobby::update(int ticks)
         Log::info("ServerLobby", "End of game message sent");
 	GlobalLog::write_Log("GAME_END\n","goalLog");
 	if(ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_END\n","posLog");
+	GlobalLog::close_Log("goalLog");
+	GlobalLog::close_Log("posLog");
         break;
     case RESULT_DISPLAY:
         rotatePlayerQueue();

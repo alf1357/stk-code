@@ -75,7 +75,6 @@ private:
     /* Used in network to restore previous gravity in compressed form. */
     uint32_t          m_compressed_gravity_vector;
 
-    static std::ofstream outfile;
     static bool m_pos_log;
 
     /** If the flyable is in a cannon, this is the pointer to the cannon
