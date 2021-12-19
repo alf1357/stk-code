@@ -255,6 +255,7 @@ SoccerWorld::SoccerWorld() : WorldWithRank()
     m_bad_blue_goals = 0;
     m_init_red_goals = 0;
     m_init_blue_goals = 0;
+    m_pos_log = ServerConfig::m_pos_log;
     m_frame_count = 0;
     m_use_highscores = false;
     m_red_ai = 0;
@@ -577,11 +578,13 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
 	    GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","goalLog");
+	    if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
 	}
         else
 	{
             msg = _("Oops, %s made an own goal!", sd.m_player);
 	    GlobalLog::write_Log("own_goal "+ player_name + " "+team_name+"\n","goalLog");
+	    if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
 	}
         if (m_race_gui)
         {

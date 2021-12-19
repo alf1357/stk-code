@@ -123,6 +123,9 @@ namespace ServerConfig
     SERVER_CFG_PREFIX BoolServerConfigParam m_pos_log
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "pos-log","Position Log true or false."));
 
+    SERVER_CFG_PREFIX BoolServerConfigParam m_temp_pos_log
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "temp-pos-log","Position Log but not for every game (true or false)."));
+
     SERVER_CFG_PREFIX IntServerConfigParam m_fixed_lap_count
         SERVER_CFG_DEFAULT(IntServerConfigParam(-1, "fixed-lap-count","fixed-lap-count"));
 

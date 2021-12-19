@@ -2292,6 +2292,8 @@ void ServerLobby::update(int ticks)
     }
 
     handlePlayerDisconnection();
+    std::string cmd;
+    std::string pos_log_path = ServerConfig::m_pos_log_path;
 
     switch (m_state.load())
     {
@@ -2354,6 +2356,12 @@ void ServerLobby::update(int ticks)
 	if(ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_END\n","posLog");
 	GlobalLog::close_Log("goalLog");
 	GlobalLog::close_Log("posLog");
+	if(ServerConfig::m_temp_pos_log and ServerConfig::m_pos_log)
+	{
+	    ServerConfig::m_pos_log=false;
+	    cmd = "python3 poslog2website.py " + pos_log_path;
+	    system(cmd.c_str());
+	}
         break;
     case RESULT_DISPLAY:
         rotatePlayerQueue();
@@ -6229,6 +6237,23 @@ void ServerLobby::handleServerCommand(Event* event,
         sw->allToLobby();
         std::string msg = "The game will be restarted or continued.";
         sendStringToAllPeers(msg);
+    }
+
+    else if (argv[0] == "poslog")
+    {
+        if (!isVIP(peer) && !isTrusted(peer) )
+        {
+            NetworkString* chat = getNetworkString();
+            chat->addUInt8(LE_CHAT);
+            chat->setSynchronous(true);
+            chat->encodeString16(L"You are not server owner");
+            peer->sendPacket(chat, true/*reliable*/);
+            delete chat;
+            return;
+        }
+	ServerConfig::m_pos_log=true;
+        std::string msg = "Logging of player positions activated for next game. File will be put to https://the-rocker.de/poslog";
+        sendStringToPeer(msg,peer);
     }
 
     else if (argv[0] == "stop")
