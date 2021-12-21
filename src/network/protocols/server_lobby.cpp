@@ -839,9 +839,6 @@ void ServerLobby::handleChat(Event* event)
     std::string log_tag = muted ? "ServerLobbyChat [muted]" : "ServerLobbyChat";
     Log::info(log_tag.c_str(), message_utf8.c_str());
 
-    message_text = std::regex_replace(message_text, std::regex("Frank"), "Peter");
-    message_text = std::regex_replace(message_text, std::regex("frank"), "peter");
-
     if (m_faked_players.find(message_sender) != m_faked_players.end())
         message_sender = m_faked_players[message_sender].first;
     
