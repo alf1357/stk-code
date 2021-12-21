@@ -2356,11 +2356,20 @@ void ServerLobby::update(int ticks)
 	if(ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_END\n","posLog");
 	GlobalLog::close_Log("goalLog");
 	GlobalLog::close_Log("posLog");
-	if(ServerConfig::m_temp_pos_log and ServerConfig::m_pos_log)
+	if(ServerConfig::m_pos_log)
 	{
-	    ServerConfig::m_pos_log=false;
-	    cmd = "python3 poslog2website.py " + pos_log_path;
-	    system(cmd.c_str());
+	    if (ServerConfig::m_temp_pos_log && ServerConfig::m_temp_pos_log_active)
+	    {
+	        cmd = "python3 poslog2website.py " + pos_log_path;
+	        if (!ServerConfig::m_super_pos_log) ServerConfig::m_pos_log=false;
+	        ServerConfig::m_temp_pos_log_active=false;
+	        system(cmd.c_str());
+	    }
+	    else if(ServerConfig::m_super_pos_log)
+	    {
+	        cmd = "python3 poslog2website_super.py " + pos_log_path;
+	        system(cmd.c_str());
+	    }
 	}
         break;
     case RESULT_DISPLAY:
@@ -6252,6 +6261,7 @@ void ServerLobby::handleServerCommand(Event* event,
             return;
         }
 	ServerConfig::m_pos_log=true;
+	ServerConfig::m_temp_pos_log_active=true;
         std::string msg = "Logging of player positions activated for next game. File will be put to https://the-rocker.de/poslog";
         sendStringToPeer(msg,peer);
     }
