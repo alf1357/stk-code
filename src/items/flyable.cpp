@@ -463,9 +463,13 @@ bool Flyable::updateAndDelete(int ticks)
     //Vec3 xyz=getBody()->getWorldTransform().getOrigin();
     const Vec3 &xyz=getXYZ();
     
-    if (m_pos_log && m_type==PowerupManager::POWERUP_CAKE)                                     {   
+    if (m_pos_log)
+    {   
         auto bowlxyz = getXYZ();
-        std::string msg = "c "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2]) + "\n";                                                                            
+	std::string current_owner = StringUtils::wideToUtf8(m_owner->getController()->getName());
+	std::string msg;
+        if (m_type==PowerupManager::POWERUP_CAKE) msg = "c "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2])+" "+current_owner + "\n";                     
+        if (m_type==PowerupManager::POWERUP_BOWLING) msg = "b "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2])+" "+current_owner + "\n";
 	GlobalLog::write_Log(msg,"posLog");                                                    
     }
 

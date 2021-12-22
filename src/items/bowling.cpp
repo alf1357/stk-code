@@ -33,7 +33,6 @@
 float Bowling::m_st_max_distance;   // maximum distance for a bowling ball to be attracted
 float Bowling::m_st_max_distance_squared;
 float Bowling::m_st_force_to_target;
-bool Bowling::m_pos_log;
 
 // -----------------------------------------------------------------------------
 Bowling::Bowling(AbstractKart *kart)
@@ -66,7 +65,6 @@ void Bowling::init(const XMLNode &node, scene::IMesh *bowling)
     m_st_max_distance         = 20.0f;
     m_st_max_distance_squared = 20.0f * 20.0f;
     m_st_force_to_target      = 10.0f;
-    m_pos_log = ServerConfig::m_pos_log;
 
     node.get("max-distance",    &m_st_max_distance   );
     m_st_max_distance_squared = m_st_max_distance*m_st_max_distance;
@@ -143,12 +141,6 @@ bool Bowling::updateAndDelete(int ticks)
     if (m_roll_sfx && m_roll_sfx->getStatus()==SFXBase::SFX_PLAYING)
         m_roll_sfx->setPosition(getXYZ());
 
-    if (m_pos_log)
-    {
-        auto bowlxyz = getXYZ();
-        std::string msg = "b "+std::to_string(bowlxyz[0]) + " " + std::to_string(bowlxyz[1]) + " "+  std::to_string(bowlxyz[2]) + "\n";
-	GlobalLog::write_Log(msg,"posLog");
-    }
     return false;
 }   // updateAndDelete
 

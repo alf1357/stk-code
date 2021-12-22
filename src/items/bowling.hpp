@@ -42,7 +42,6 @@ private:
     static float m_st_max_distance;   // maximum distance for a bowling ball to be attracted
     static float m_st_max_distance_squared;
     static float m_st_force_to_target;
-    static bool m_pos_log;
 
     /** If a bowling ball has hit something, this flag is set to indicate
      *  if a kart was hit or not. The sound effect is only played if a
