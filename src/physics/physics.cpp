@@ -32,6 +32,7 @@
 #include "modes/soccer_world.hpp"
 #include "modes/world.hpp"
 #include "network/network_config.hpp"
+#include "network/server_config.hpp"
 #include "karts/explosion_animation.hpp"
 #include "physics/btKart.hpp"
 #include "physics/irr_debug_drawer.hpp"
@@ -43,7 +44,9 @@
 #include "tracks/track.hpp"
 #include "tracks/track_object.hpp"
 #include "utils/profiler.hpp"
+#include "utils/string_utils.hpp"
 #include "utils/stk_process.hpp"
+#include "network/protocols/global_log.hpp"
 
 //=============================================================================
 Physics* g_physics[PT_COUNT];
@@ -99,6 +102,7 @@ void Physics::init(const Vec3 &world_min, const Vec3 &world_max)
                   0.0f));
     m_debug_drawer = new IrrDebugDrawer();
     m_dynamics_world->setDebugDrawer(m_debug_drawer);
+    m_pos_log = ServerConfig::m_pos_log;
 
     // Get the solver settings from the config file
     btContactSolverInfo& info = m_dynamics_world->getSolverInfo();
@@ -230,6 +234,18 @@ void Physics::update(int ticks)
                         ctx->SetArgDWord(0, kartid1);
                         ctx->SetArgDWord(1, kartid2);
                     });
+		if (m_pos_log)
+		{
+	            std::string kart_name1 = StringUtils::wideToUtf8(p->getUserPointer(0)->getPointerKart()->getController()->getName());
+	            std::string kart_name2 = StringUtils::wideToUtf8(p->getUserPointer(1)->getPointerKart()->getController()->getName());
+		    World *world = World::getWorld();
+		    bool same_team = false;
+		    if (world->hasTeam()) same_team = (world->getKartTeam(p->getUserPointer(0)->getPointerKart()->getWorldKartId()) == world->getKartTeam(p->getUserPointer(1)->getPointerKart()->getWorldKartId()));
+		    std::string log_info;
+		    if(same_team) log_info = "kart_kart " + kart_name1 + " "+kart_name2+" same_team\n";
+		    else log_info = "kart_kart " + kart_name1 + " "+kart_name2+" diff_team\n";
+		    GlobalLog::write_Log(log_info,"posLog");
+		}
             }
             continue;
         }  // if kart-kart collision
@@ -240,6 +256,7 @@ void Physics::update(int ticks)
             // -------------------------
             AbstractKart *kart = p->getUserPointer(1)->getPointerKart();
             int kartId = kart->getWorldKartId();
+	    std::string kart_username = StringUtils::wideToUtf8(kart->getController()->getName());
             PhysicalObject* obj = p->getUserPointer(0)->getPointerPhysicalObject();
             std::string obj_id = obj->getID();
             std::string scripting_function = obj->getOnKartCollisionFunction();
@@ -290,6 +307,11 @@ void Physics::update(int ticks)
             {
                 SoccerWorld* soccerWorld = (SoccerWorld*)World::getWorld();
                 soccerWorld->setBallHitter(kartId);
+		if (m_pos_log)
+		{
+		    std::string log_info = "puck_hit "+kart_username+"\n";
+		    GlobalLog::write_Log(log_info,"posLog");
+		}
             }
             continue;
         }

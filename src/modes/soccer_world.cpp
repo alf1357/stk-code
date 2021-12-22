@@ -153,6 +153,8 @@ public:
         // of ball later
         m_red_goal_slope = m_red_goal_2.z() / m_red_goal_2.x();
         m_blue_goal_slope = m_blue_goal_2.z() / m_blue_goal_2.x();
+	//std::string field_size = "Field size: "+std::to_string( m_red_goal_2.z() - m_blue_goal_2.z())+"\n";
+	//if (ServerConfig::m_pos_log) GlobalLog::write_Log(field_size,"posLog");
     }   // updateBallAndGoal
 
     bool isApproachingGoal(KartTeam team) const
@@ -297,6 +299,8 @@ void SoccerWorld::init()
     m_blue_hit_ticks = -1;
 
     Track *track = Track::getCurrentTrack();
+    std::string track_name = StringUtils::wideToUtf8(track -> getName());
+    if(m_pos_log) GlobalLog::write_Log("Addon: "+track_name+"\n","posLog");
     if (track->hasNavMesh())
     {
         // Init track sector for ball if navmesh is found
@@ -443,10 +447,12 @@ void SoccerWorld::update(int ticks)
         {
             //if (m_xyz_str_count%10!=0) break;
             auto xyz_print = m_karts[i]->getXYZ();
+	    KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
+	    std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
             std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
 	    if (xyz_name2.size() < 2) continue;
             std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
-	    GlobalLog::write_Log(xyz_name2 + " " + xyz_str2 +"\n","posLog");
+	    GlobalLog::write_Log(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n","posLog");
         }
         auto ball_print = getBallPosition();
         if (1) //(m_xyz_str_count%10==0)
