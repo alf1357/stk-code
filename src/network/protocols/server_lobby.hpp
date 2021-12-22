@@ -448,6 +448,8 @@ public:
     std::map<std::string, std::string> m_set_kart;
     bool canRace(std::shared_ptr<STKPeer>& peer) const;
     bool canRace(STKPeer* peer) const;
+    std::set<STKPeer*> m_team_speakers;
+    std::map<STKPeer*, std::set<irr::core::stringw>> m_message_receivers;
 };   // class ServerLobby
 
 #endif // SERVER_LOBBY_HPP
