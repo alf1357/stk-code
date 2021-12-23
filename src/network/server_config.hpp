@@ -93,11 +93,17 @@ namespace ServerConfig
         "characters."));
 
     // ----Server Config Variables
-    SERVER_CFG_PREFIX BoolServerConfigParam m_count_supertournament_game
-        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "count","count"));
-
     SERVER_CFG_PREFIX BoolServerConfigParam m_supertournament
-        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "supertournament","supertournament"));
+        SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "supertournament", "supertournament"));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_red_team
+        SERVER_CFG_DEFAULT(StringServerConfigParam("A", "red-team", "Name of red team."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_blue_team
+        SERVER_CFG_DEFAULT(StringServerConfigParam("B", "blue-team", "Name of blue team."));
+
+    SERVER_CFG_PREFIX StringServerConfigParam m_tournament_players
+        SERVER_CFG_DEFAULT(StringServerConfigParam("Player1 A Player2 B Player3 C Player4 Sub", "tournament-players", "Name of tournament players and their teams, separated by spaces."));
 
     SERVER_CFG_PREFIX StringServerConfigParam m_vip
     SERVER_CFG_DEFAULT(StringServerConfigParam("TheRocker Gelbbrauenlaubsaenger Waldlaubsaengernest NobWow","vips","Name of VIPs."));
@@ -107,12 +113,6 @@ namespace ServerConfig
 
     SERVER_CFG_PREFIX StringServerConfigParam m_muted_players
         SERVER_CFG_DEFAULT(StringServerConfigParam("", "muted-players", "Name of permanently muted players, separated by spaces"));
-    
-    SERVER_CFG_PREFIX StringServerConfigParam m_red_team
-        SERVER_CFG_DEFAULT(StringServerConfigParam("", "red-team", "Name of red players."));
-
-    SERVER_CFG_PREFIX StringServerConfigParam m_blue_team
-        SERVER_CFG_DEFAULT(StringServerConfigParam("", "blue-team", "Name of blue players."));
     
     SERVER_CFG_PREFIX StringServerConfigParam m_logfile_name
         SERVER_CFG_DEFAULT(StringServerConfigParam("log.txt", "logfile-name", "File where the log should be written to."));

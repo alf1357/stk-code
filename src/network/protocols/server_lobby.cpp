@@ -256,10 +256,8 @@ ServerLobby::ServerLobby() : LobbyProtocol()
     for (auto player : trusted_players) m_trusted_players.insert(player);
     std::vector<std::string> muted_players = StringUtils::split(ServerConfig::m_muted_players, ' ');
     for (auto player : muted_players) m_muted_players.insert(player);
-    std::vector<std::string> red_team = StringUtils::split(ServerConfig::m_red_team, ' ');
-    for (auto player : red_team) m_red_team.insert(player);
-    std::vector<std::string> blue_team = StringUtils::split(ServerConfig::m_blue_team, ' ');
-    for (auto player : blue_team) m_blue_team.insert(player);
+    if (ServerConfig::m_supertournament)
+        m_tournament_manager.InitializePlayersAndTeams(ServerConfig::m_tournament_players, ServerConfig::m_red_team, ServerConfig::m_blue_team);
     m_player_reports_table_exists = false;
     m_player_queue_limit = ServerConfig::m_player_queue_limit;
     initDatabase();
@@ -4040,16 +4038,8 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
                 country_code);
 
 	    if (ServerConfig::m_supertournament)
-        {
-            if (m_red_team.count(utf8_online_name)){
-                player->setTeam(KART_TEAM_RED); }
-	        else if (m_blue_team.count(utf8_online_name)) {
-                player->setTeam(KART_TEAM_BLUE);}
-            else
-            {
-                player->setTeam(KART_TEAM_NONE);
-            }
-	    }
+            player->setTeam(m_tournament_manager.GetKartTeam(utf8_online_name));
+
         if (ServerConfig::m_team_choosing && !(ServerConfig::m_supertournament))
         {
             KartTeam cur_team = KART_TEAM_NONE;
@@ -4248,21 +4238,7 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
     const bool game_started = m_state.load() != WAITING_FOR_START_GAME &&
         !update_when_reset_server;
 
-
     auto peers = STKHost::get()->getPeers();
-
-    if (ServerConfig::m_supertournament && update_when_reset_server)   //important to check second one
-    {
-        for (auto peer : peers)
-        {
-            std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
-            bool found = m_red_team.count(username) || m_blue_team.count(username);
-            if (found)
-                peer->setAlwaysSpectate(ASM_NONE);
-            else
-                peer->setAlwaysSpectate(ASM_FULL);
-        }
-    }
 
     auto all_profiles = STKHost::get()->getAllPlayerProfiles();
     size_t all_profiles_size = all_profiles.size();
@@ -4340,6 +4316,14 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
         // Add an hourglass emoji for players waiting because of the player limit
         if (spectators_by_limit.find(profile->getPeer()) != spectators_by_limit.end()) 
             profile_name = StringUtils::utf32ToWide({ 0x231B }) + profile_name;
+
+        // Display the team in case of tournament
+        if (ServerConfig::m_supertournament)
+        {
+            std::string team = "[" + m_tournament_manager.GetTeam(user_name) + "] ";
+            if (team != "")
+                profile_name = StringUtils::utf8ToWide(team) + profile_name;
+        }
 
         pl->addUInt32(profile->getHostId()).addUInt32(profile->getOnlineId())
             .addUInt8(profile->getLocalPlayerId())
@@ -6149,65 +6133,93 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (StringUtils::startsWith(cmd, "role"))
     {
-	std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
-	std::string msg;
+        std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        std::string msg;
         if (!isVIP(peer) && !isTrusted(peer) )
         {
-            NetworkString* chat = getNetworkString();
-            chat->addUInt8(LE_CHAT);
-            chat->setSynchronous(true);
-            chat->encodeString16(L"You are not server owner");
-            peer->sendPacket(chat, true/*reliable*/);
-            delete chat;
+            msg = "You are not server owner";
+            sendStringToPeer(msg, peer);
             return;
         }
-	if (argv.size() != 3 || (argv[2] != "r" && argv[2] != "b" && argv[2]!="s"))
+        if (argv.size() != 3 || (argv[2] != "r" && argv[2] != "b" && argv[2] != "s"))
         {
             msg = "Format: /role player_name {r,b}";
             sendStringToPeer(msg, peer);
             return;
         }
         std::string name = argv[1];
-        std::string peer_name;
         std::string color = argv[2];
         auto peers = STKHost::get()->getPeers();
-	for (auto peer2 : peers)
+        for (auto peer2 : peers)
         {
-	    peer_name = StringUtils::wideToUtf8(peer2->getPlayerProfiles()[0]->getName());
+            std::string peer_name = StringUtils::wideToUtf8(peer2->getPlayerProfiles()[0]->getName());
             if (peer_name==name)
             {
                 auto pp = peer2->getPlayerProfiles()[0];
                 if (argv[2]=="b")
-		{
-		    pp->setTeam(KART_TEAM_BLUE);
-		    if (!(m_blue_team.count(peer_name))) m_blue_team.insert(peer_name); 
-		    if ((m_red_team.count(peer_name))) m_red_team.erase(peer_name); 
+                {
+                    pp->setTeam(KART_TEAM_BLUE);
+                    if (ServerConfig::m_supertournament)
+                        m_tournament_manager.SetKartTeam(peer_name, KART_TEAM_BLUE);
                     peer2->setAlwaysSpectate(ASM_NONE);
-		}
-		else if (argv[2]=="r")
-		{
-		    pp->setTeam(KART_TEAM_RED);
-		    if (!(m_red_team.count(peer_name))) m_red_team.insert(peer_name); 
-		    if ((m_blue_team.count(peer_name))) m_blue_team.erase(peer_name); 
+
+                }
+                else if (argv[2]=="r")
+                {
+                    pp->setTeam(KART_TEAM_RED);
+                    if (ServerConfig::m_supertournament)
+                        m_tournament_manager.SetKartTeam(peer_name, KART_TEAM_RED);
                     peer2->setAlwaysSpectate(ASM_NONE);
-		}
-		else if (argv[2]=="s")
-		{
-		    pp->setTeam(KART_TEAM_NONE);
-		    if ((m_blue_team.count(peer_name))) m_blue_team.erase(peer_name); 
-		    else if ((m_red_team.count(peer_name))) m_red_team.erase(peer_name); 
-                    peer2->setAlwaysSpectate(ASM_FULL);
-		}
+                }
+                else if (argv[2]=="s")
+                {
+                    pp->setTeam(KART_TEAM_NONE);
+                    if (ServerConfig::m_supertournament)
+                        m_tournament_manager.SetKartTeam(peer_name, KART_TEAM_NONE);
+                    else
+                        peer2->setAlwaysSpectate(ASM_FULL);
+                }
                 updatePlayerList();
-		return;
+                return;
             }
         }
-	
     }
+    else if (argv[0] == "teams")
+    {
+        std::string msg = "";
+        if (!isVIP(peer) && !isTrusted(peer))
+            msg = "You are not server owner";
+        else if (!ServerConfig::m_supertournament)
+            msg = "/teams command is only for SuperTournament.";
+        else if (argv.size() != 3)
+            msg = "Format: /teams red_team blue_team";
 
+        if (msg != "")
+        {
+            sendStringToPeer(msg, peer);
+            return;
+        }
+
+        m_tournament_manager.UpdateTeams(argv[1], argv[2]);
+
+        auto peers = STKHost::get()->getPeers();
+        for (auto p : peers)
+        {
+            for (auto player : p->getPlayerProfiles())
+            {
+                std::string name = StringUtils::wideToUtf8(player->getName());
+                player->setTeam(m_tournament_manager.GetKartTeam(name));
+            }    
+        }
+
+        updatePlayerList();
+        msg = "Red team: " + argv[1] + " / Blue team: " + argv[2];
+        sendStringToPeer(msg, peer);
+        return;
+    }
     else if (argv[0] == "game")
     {
-	if (!isVIP(peer) && !isTrusted(peer) )
+        if (!isVIP(peer) && !isTrusted(peer) )
         {
             NetworkString* chat = getNetworkString();
             chat->addUInt8(LE_CHAT);
@@ -6233,7 +6245,7 @@ void ServerLobby::handleServerCommand(Event* event,
         }
 
         int length = 7;
-	ServerConfig::m_fixed_lap_count = length;
+        ServerConfig::m_fixed_lap_count = length;
         if (argv.size() >= 3) ServerConfig::m_fixed_lap_count = std::stoi(argv[2]);
 
         if (argv[1]=="1")
@@ -7062,7 +7074,7 @@ bool ServerLobby::canRace(STKPeer* peer) const
 
     if (ServerConfig::m_supertournament)
     {
-        if (m_red_team.count(username)==0 && m_blue_team.count(username)==0) return false;
+        return m_tournament_manager.CanPlay(username);
     }
 
     return true;

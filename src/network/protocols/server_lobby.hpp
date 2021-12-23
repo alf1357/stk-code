@@ -20,6 +20,7 @@
 #define SERVER_LOBBY_HPP
 
 #include "network/protocols/lobby_protocol.hpp"
+#include "network/tournament/tournament_manager.hpp"
 #include "utils/cpp2011.hpp"
 #include "utils/time.hpp"
 
@@ -266,6 +267,9 @@ private:
     std::map<std::string, int> m_player_queue_history;
     std::set<std::string> m_pending_live_joiners;
 
+    // SuperTournament
+    TournamentManager m_tournament_manager;
+
     // connection management
     void clientDisconnected(Event* event);
     void connectionRequested(Event* event);
@@ -438,8 +442,6 @@ public:
 
     std::set<std::string> m_vip_players;
     std::set<std::string> m_trusted_players;
-    std::set<std::string> m_red_team;
-    std::set<std::string> m_blue_team;
     void sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const;
     void sendStringToAllPeers(std::string& s);
     bool serverAndPeerHaveTrack(std::shared_ptr<STKPeer>& peer, std::string track_id) const;
