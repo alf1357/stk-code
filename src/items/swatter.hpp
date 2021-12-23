@@ -28,6 +28,7 @@
 #include <set>
 #include <vector3d.h>
 #include <IAnimatedMeshSceneNode.h>
+#include "network/server_config.hpp"
 
 using namespace irr;
 
@@ -114,6 +115,8 @@ private:
 
     /** Squash karts or items that are around the end position (determined using a joint) of the swatter */
     void    squashThingsAround();
+
+    bool m_pos_log = ServerConfig::m_pos_log;
 };   // Swatter
 
 #endif

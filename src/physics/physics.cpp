@@ -32,6 +32,7 @@
 #include "modes/soccer_world.hpp"
 #include "modes/world.hpp"
 #include "network/network_config.hpp"
+#include "network/server_config.hpp"
 #include "karts/explosion_animation.hpp"
 #include "physics/btKart.hpp"
 #include "physics/irr_debug_drawer.hpp"
@@ -43,7 +44,10 @@
 #include "tracks/track.hpp"
 #include "tracks/track_object.hpp"
 #include "utils/profiler.hpp"
+#include "utils/string_utils.hpp"
 #include "utils/stk_process.hpp"
+#include "network/protocols/global_log.hpp"
+
 
 //=============================================================================
 Physics* g_physics[PT_COUNT];
@@ -99,6 +103,7 @@ void Physics::init(const Vec3 &world_min, const Vec3 &world_max)
                   0.0f));
     m_debug_drawer = new IrrDebugDrawer();
     m_dynamics_world->setDebugDrawer(m_debug_drawer);
+    m_pos_log = ServerConfig::m_pos_log;
 
     // Get the solver settings from the config file
     btContactSolverInfo& info = m_dynamics_world->getSolverInfo();
@@ -230,6 +235,18 @@ void Physics::update(int ticks)
                         ctx->SetArgDWord(0, kartid1);
                         ctx->SetArgDWord(1, kartid2);
                     });
+		if (m_pos_log)
+		{
+	            std::string kart_name1 = StringUtils::wideToUtf8(p->getUserPointer(0)->getPointerKart()->getController()->getName());
+	            std::string kart_name2 = StringUtils::wideToUtf8(p->getUserPointer(1)->getPointerKart()->getController()->getName());
+		    World *world = World::getWorld();
+		    bool same_team = false;
+		    if (world->hasTeam()) same_team = (world->getKartTeam(p->getUserPointer(0)->getPointerKart()->getWorldKartId()) == world->getKartTeam(p->getUserPointer(1)->getPointerKart()->getWorldKartId()));
+		    std::string log_info;
+		    if(same_team) log_info = "kart_kart " + kart_name1 + " "+kart_name2+" same_team\n";
+		    else log_info = "kart_kart " + kart_name1 + " "+kart_name2+" diff_team\n";
+		    GlobalLog::write_Log(log_info,"posLog");
+		}
             }
             continue;
         }  // if kart-kart collision
@@ -240,6 +257,7 @@ void Physics::update(int ticks)
             // -------------------------
             AbstractKart *kart = p->getUserPointer(1)->getPointerKart();
             int kartId = kart->getWorldKartId();
+	    std::string kart_username = StringUtils::wideToUtf8(kart->getController()->getName());
             PhysicalObject* obj = p->getUserPointer(0)->getPointerPhysicalObject();
             std::string obj_id = obj->getID();
             std::string scripting_function = obj->getOnKartCollisionFunction();
@@ -290,6 +308,11 @@ void Physics::update(int ticks)
             {
                 SoccerWorld* soccerWorld = (SoccerWorld*)World::getWorld();
                 soccerWorld->setBallHitter(kartId);
+		if (m_pos_log)
+		{
+		    std::string log_info = "puck_hit "+kart_username+"\n";
+		    GlobalLog::write_Log(log_info,"posLog");
+		}
             }
             continue;
         }
@@ -360,9 +383,21 @@ void Physics::update(int ticks)
             if (obj->isSoccerBall() && 
                 RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_SOCCER)
             {
-                int kartId = p->getUserPointer(0)->getPointerFlyable()->getOwnerId();
+                int kartId = flyable->getOwnerId();
+                std::string current_owner = StringUtils::wideToUtf8(flyable->getOwner()->getController()->getName());
                 SoccerWorld* soccerWorld = (SoccerWorld*)World::getWorld();
                 soccerWorld->setBallHitter(kartId);
+		if (m_pos_log)
+                {
+		    PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
+                    float current_speed = p->getUserPointer(0)->getPointerFlyable()->getSpeed();
+		    auto ball_pos = soccerWorld->getBallPosition();
+		    std::string current_ball_pos = std::to_string(ball_pos[0]) + " " + std::to_string(ball_pos[1]) + " " + std::to_string(ball_pos[2]);
+                    std::string log_info="";
+		    if (type==PowerupManager::POWERUP_BOWLING) log_info = "puck_hit_bowl " + std::to_string(current_speed) + " " + current_owner + " " + current_ball_pos + "\n";
+		    else if (type==PowerupManager::POWERUP_CAKE) log_info = "puck_hit_cake "+current_owner+"\n";
+                    GlobalLog::write_Log(log_info,"posLog");
+                }
             }
 
         }
@@ -374,13 +409,31 @@ void Physics::update(int ticks)
             // not invulnerable
             AbstractKart* target_kart = p->getUserPointer(1)->getPointerKart();
             PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
+	    World *world = World::getWorld(); 
             if(type != PowerupManager::POWERUP_BOWLING || !target_kart->isInvulnerable())
             {
                 Flyable *f = p->getUserPointer(0)->getPointerFlyable();
                 f->hit(target_kart);
-
+		
                 // Check for achievements
                 AbstractKart * kart = World::getWorld()->getKart(f->getOwnerId());
+
+                if (m_pos_log && world->hasTeam() && target_kart != kart)
+                {
+                    std::string current_owner = StringUtils::wideToUtf8(kart->getController()->getName());
+                    std::string current_hit = StringUtils::wideToUtf8(target_kart->getController()->getName());
+                    int kartId_owner = kart->getWorldKartId();
+                    int kartId_hit = target_kart->getWorldKartId();
+		    std::string log_info="";
+                    if (world->getKartTeam(kartId_owner) != world->getKartTeam(kartId_hit))
+		    {
+		        if (type==PowerupManager::POWERUP_BOWLING) log_info = current_owner + " bowled "+current_hit+"\n";
+		        else if (type==PowerupManager::POWERUP_CAKE) log_info = current_owner + " caked "+current_hit+"\n";
+                        GlobalLog::write_Log(log_info,"posLog");
+		    }
+                }
+
+
                 LocalPlayerController *lpc =
                     dynamic_cast<LocalPlayerController*>(kart->getController());
 

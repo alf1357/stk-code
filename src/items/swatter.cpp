@@ -42,6 +42,8 @@
 #include "modes/capture_the_flag.hpp"
 #include "network/network_string.hpp"
 #include "network/rewind_manager.hpp"
+#include "network/protocols/global_log.hpp"
+#include "utils/string_utils.hpp"
 
 #define SWAT_POS_OFFSET        core::vector3df(0.0, 0.2f, -0.4f)
 #define SWAT_ANGLE_MIN  45
@@ -277,6 +279,12 @@ bool Swatter::updateAndTestFinished(int ticks)
                     m_animation_phase = SWATTER_TO_TARGET;
                     m_swatter_animation_ticks =
                         m_attachment->getTicksLeft() - 20;
+		    if (m_pos_log)
+		    {
+		        std::string swatter_owner = StringUtils::wideToUtf8(m_kart->getController()->getName());
+		        std::string swatter_hit = StringUtils::wideToUtf8(m_closest_kart->getController()->getName());
+			GlobalLog::write_Log(swatter_owner+" swattered "+swatter_hit+"\n","posLog");
+		    }
                 }
             }
             break;

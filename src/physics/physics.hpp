@@ -130,6 +130,9 @@ private:
     *  taking place, as can happen in collision handling). */
     bool               m_physics_loop_active;
 
+    // Position Log
+    bool m_pos_log;
+
     /** If kart need to be removed from the physics world while physics
     *  processing is taking place, store the pointers to the karts to
     *  be removed here, and remove them once the physics processing
