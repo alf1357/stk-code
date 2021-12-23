@@ -48,6 +48,7 @@
 #include "utils/stk_process.hpp"
 #include "network/protocols/global_log.hpp"
 
+
 //=============================================================================
 Physics* g_physics[PT_COUNT];
 // ----------------------------------------------------------------------------
@@ -382,9 +383,21 @@ void Physics::update(int ticks)
             if (obj->isSoccerBall() && 
                 RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_SOCCER)
             {
-                int kartId = p->getUserPointer(0)->getPointerFlyable()->getOwnerId();
+                int kartId = flyable->getOwnerId();
+                std::string current_owner = StringUtils::wideToUtf8(flyable->getOwner()->getController()->getName());
                 SoccerWorld* soccerWorld = (SoccerWorld*)World::getWorld();
                 soccerWorld->setBallHitter(kartId);
+		if (m_pos_log)
+                {
+		    PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
+                    float current_speed = p->getUserPointer(0)->getPointerFlyable()->getSpeed();
+		    auto ball_pos = soccerWorld->getBallPosition();
+		    std::string current_ball_pos = std::to_string(ball_pos[0]) + " " + std::to_string(ball_pos[1]) + " " + std::to_string(ball_pos[2]);
+                    std::string log_info="";
+		    if (type==PowerupManager::POWERUP_BOWLING) log_info = "puck_hit_bowl " + std::to_string(current_speed) + " " + current_owner + " " + current_ball_pos + "\n";
+		    else if (type==PowerupManager::POWERUP_CAKE) log_info = "puck_hit_cake "+current_owner+"\n";
+                    GlobalLog::write_Log(log_info,"posLog");
+                }
             }
 
         }
@@ -396,13 +409,31 @@ void Physics::update(int ticks)
             // not invulnerable
             AbstractKart* target_kart = p->getUserPointer(1)->getPointerKart();
             PowerupManager::PowerupType type = p->getUserPointer(0)->getPointerFlyable()->getType();
+	    World *world = World::getWorld(); 
             if(type != PowerupManager::POWERUP_BOWLING || !target_kart->isInvulnerable())
             {
                 Flyable *f = p->getUserPointer(0)->getPointerFlyable();
                 f->hit(target_kart);
-
+		
                 // Check for achievements
                 AbstractKart * kart = World::getWorld()->getKart(f->getOwnerId());
+
+                if (m_pos_log && world->hasTeam() && target_kart != kart)
+                {
+                    std::string current_owner = StringUtils::wideToUtf8(kart->getController()->getName());
+                    std::string current_hit = StringUtils::wideToUtf8(target_kart->getController()->getName());
+                    int kartId_owner = kart->getWorldKartId();
+                    int kartId_hit = target_kart->getWorldKartId();
+		    std::string log_info="";
+                    if (world->getKartTeam(kartId_owner) != world->getKartTeam(kartId_hit))
+		    {
+		        if (type==PowerupManager::POWERUP_BOWLING) log_info = current_owner + " bowled "+current_hit+"\n";
+		        else if (type==PowerupManager::POWERUP_CAKE) log_info = current_owner + " caked "+current_hit+"\n";
+                        GlobalLog::write_Log(log_info,"posLog");
+		    }
+                }
+
+
                 LocalPlayerController *lpc =
                     dynamic_cast<LocalPlayerController*>(kart->getController());
 
