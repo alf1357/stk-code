@@ -440,6 +440,9 @@ public:
     void addDeletePlayersFromQueue(std::shared_ptr<STKPeer>& peer, bool add);
     void rotatePlayerQueue();
 
+    // SuperTournament
+    void onTournamentGameEnded();
+
     std::set<std::string> m_vip_players;
     std::set<std::string> m_trusted_players;
     void sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const;

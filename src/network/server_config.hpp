@@ -120,6 +120,9 @@ namespace ServerConfig
     SERVER_CFG_PREFIX StringServerConfigParam m_pos_log_path
         SERVER_CFG_DEFAULT(StringServerConfigParam("pos_log.txt", "pos-log-path", "Directory where the pos log should be written to with / at the end."));
 
+    SERVER_CFG_PREFIX StringServerConfigParam m_tourn_log
+        SERVER_CFG_DEFAULT(StringServerConfigParam("super-tourn-log.txt", "tourn-log-path", "File where the tournament log should be written to."));
+
     SERVER_CFG_PREFIX BoolServerConfigParam m_pos_log
         SERVER_CFG_DEFAULT(BoolServerConfigParam(false, "pos-log","Position Log (true or false.)"));
     

@@ -19,13 +19,39 @@
 #ifndef TOURNAMENT_MANAGER_HPP
 #define TOURNAMENT_MANAGER_HPP
 
+#include "modes/soccer_world.hpp"
 #include "network/remote_kart_info.hpp"
+#include "network/server_config.hpp"
 #include "utils/log.hpp"
 #include "utils/string_utils.hpp"
 
+#include <iostream>
+#include <fstream>
 #include <map>
 #include <set>
 #include <string>
+
+struct GameResult
+{
+    int m_red_goals;
+    int m_blue_goals;
+    std::vector<SoccerWorld::ScorerData> m_red_scorers;
+    std::vector<SoccerWorld::ScorerData> m_blue_scorers;
+
+    GameResult() 
+    {
+        m_red_goals = 0;
+        m_blue_goals = 0;
+    };
+
+    GameResult(int red_goals, int blue_goals, std::vector<SoccerWorld::ScorerData> red_scorers, std::vector<SoccerWorld::ScorerData> blue_scorers)
+    {
+        m_red_goals = red_goals;
+        m_blue_goals = blue_goals;
+        m_red_scorers = red_scorers;
+        m_blue_scorers = blue_scorers;
+    }
+};
 
 class TournamentManager
 {
@@ -35,6 +61,17 @@ private:
     std::string m_blue_team; // "B"
     std::set<std::string> m_red_players;
     std::set<std::string> m_blue_players;
+
+    std::map<int, GameResult> m_game_results;
+    int m_current_game_index = -1; // 1-based count index of the games
+    GameResult m_current_game_result;
+    float m_target_time = 0;
+    float m_elapsed_time = 0;
+    float m_stopped_at = 0;
+
+    void FilterScorerData(std::vector<SoccerWorld::ScorerData>& scorers);
+    void GetAdditionalTime(int& minutes, int& seconds) const;
+    void OnGameEnded();
 
 public:
     TournamentManager();
@@ -46,6 +83,21 @@ public:
     KartTeam GetKartTeam(std::string player_name) const;
     void SetKartTeam(std::string player_name, KartTeam team);
     bool CanPlay(std::string player_name) const;
+
+    void StartGame(int index, float target_time);
+    void StopGame(float elapsed_time);
+    void ResumeGame(float elapsed_time);
+    void HandleGameResult(float elapsed_time, GameResult result);
+    void ForceEndGame();
+    void GetCurrentResult(int& red_goals, int& blue_goals);
+    void SetCurrentResult(int red_goals, int blue_goals);
+    float GetAdditionalSeconds() const;
+    int GetAdditionalMinutesRounded() const;
+    std::string GetAdditionalTimeMessage() const;
+    void AddAdditionalSeconds(float seconds);
+    bool GameInitialized() const;
+    bool GameOpen() const;
+    bool GameDone(int index) const;
 };
 
 #endif

@@ -1154,6 +1154,15 @@ void SoccerWorld::saveCompleteState(BareNetworkString* bns, STKPeer* peer)
 }   // saveCompleteState
 
 // ----------------------------------------------------------------------------
+float SoccerWorld::getElapsedTime()
+{
+    if (RaceManager::get()->hasTimeTarget())
+        return RaceManager::get()->getTimeTarget() - getTime();
+    else
+        return getTime();
+} // getElapsedTime
+
+// ----------------------------------------------------------------------------
 void SoccerWorld::restoreCompleteState(const BareNetworkString& b)
 {
     m_red_scorers.clear();
@@ -1301,3 +1310,4 @@ void SoccerWorld::tellCountIfDiffers() const
         tellCount();
     }
 }   // tellCountIfDiffers
+
