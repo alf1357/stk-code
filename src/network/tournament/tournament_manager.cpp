@@ -191,6 +191,15 @@ void TournamentManager::ForceEndGame()
     OnGameEnded();
 }
 
+void TournamentManager::ResetGame(int index)
+{
+    m_current_game_index = -1;
+    m_target_time = 0;
+    m_stopped_at = 0;
+    m_elapsed_time = 0;
+    m_game_results.erase(index);
+}
+
 void TournamentManager::GetCurrentResult(int& red_goals, int& blue_goals)
 {
     red_goals = m_current_game_result.m_red_goals;

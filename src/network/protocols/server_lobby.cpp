@@ -2386,7 +2386,7 @@ void ServerLobby::update(int ticks)
         // Enable all tracks and karts again
         m_set_kart.clear();
         m_set_field = "";
-	ServerConfig::m_fixed_lap_count = -1;
+        ServerConfig::m_fixed_lap_count = -1;
 
         // Reset for next state usage
         resetPeersReady();
@@ -2835,6 +2835,11 @@ void ServerLobby::startSelection(const Event *event)
             m_available_kts.second.insert("volcano_island"); // race
     }
 
+    if (ServerConfig::m_supertournament)
+    {
+        ServerConfig::m_fixed_lap_count = std::max(m_tournament_manager.GetAdditionalMinutesRounded(), 1);
+    }
+
     RandomGenerator rg;
     std::set<std::string>::iterator it = m_available_kts.second.begin();
     std::advance(it, rg.get((int)m_available_kts.second.size()));
@@ -2865,7 +2870,11 @@ void ServerLobby::startSelection(const Event *event)
         }
         case RaceManager::MINOR_MODE_SOCCER:
         {
-            if (m_game_setup->isSoccerGoalTarget())
+            if (ServerConfig::m_fixed_lap_count >= 0)
+            {
+                m_default_vote->m_num_laps = ServerConfig::m_fixed_lap_count;
+            } 
+            else if (m_game_setup->isSoccerGoalTarget())
             {
                 m_default_vote->m_num_laps =
                     (uint8_t)(UserConfigParams::m_num_goals);
@@ -2880,8 +2889,6 @@ void ServerLobby::startSelection(const Event *event)
                     m_default_vote->m_num_laps = (uint8_t)7;
             }
             m_default_vote->m_reverse = 0; // disable random distribution of items
-            if (ServerConfig::m_supertournament)
-                m_default_vote->m_num_laps = ServerConfig::m_fixed_lap_count;
             break;
         }
         default:
@@ -3209,7 +3216,8 @@ void ServerLobby::checkRaceFinished()
         m_result_ns->encodeString(static_cast<LinearWorld*>(World::getWorld())
             ->getFastestLapKartName());
     }
-    else if (ServerConfig::m_supertournament)
+
+    if (ServerConfig::m_supertournament)
     {
         onTournamentGameEnded();
     }
@@ -4543,7 +4551,11 @@ void ServerLobby::handlePlayerVote(Event* event)
     else if (RaceManager::get()->isSoccerMode())
     {
         vote.m_reverse = false;
-        if (m_game_setup->isSoccerGoalTarget())
+        if (ServerConfig::m_fixed_lap_count >= 0)
+        {
+            vote.m_num_laps = ServerConfig::m_fixed_lap_count;
+        }
+        else if (m_game_setup->isSoccerGoalTarget())
         {
             if (ServerConfig::m_auto_game_time_ratio > 0.0f)
             {
@@ -6310,32 +6322,26 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (argv[0] == "game")
     {
+        std::string msg = "";
         if (!isVIP(peer) && !isTrusted(peer) )
+            msg = "You are not server owner";
+
+        if (ServerConfig::m_supertournament && argv.size() >= 3 && argv[2] == "reset")
         {
-            NetworkString* chat = getNetworkString();
-            chat->addUInt8(LE_CHAT);
-            chat->setSynchronous(true);
-            chat->encodeString16(L"You are not server owner");
-            peer->sendPacket(chat, true/*reliable*/);
-            delete chat;
+            m_tournament_manager.ResetGame(std::stoi(argv[1]));
+            msg = "Game " + argv[1] + " has been reset.";
+        }
+
+        if (msg != "")
+        {
+            sendStringToPeer(msg, peer);
             return;
         }
 
-        bool reset = false;
-        if (ServerConfig::m_supertournament && argv.size() >= 3 && argv[2] == "reset")
-        {
-            reset = true;
-            argv[2] = ServerConfig::m_fixed_lap_count;
-        }
-
-        bool ok = false;
-        if (std::stoi(argv[1]) > 0 && std::stoi(argv[1]) <= 5) ok = true;
-        std::string msg;
+        bool ok = argv.size() >= 2 && std::stoi(argv[1]) > 0 && std::stoi(argv[1]) <= 5;
         if (argv.size() >= 3)
-        {
-            ok = false;
-            if (std::stoi(argv[2]) > 0 && std::stoi(argv[2]) <= 15) ok = true;
-        }
+            ok &= (std::stoi(argv[2]) > 0 && std::stoi(argv[2]) <= 15);
+        
         if (argv.size() < 2 || ok == false)
         {
             msg = "Please specify a correct number. Format: /game [number][length]";
@@ -6355,7 +6361,7 @@ void ServerLobby::handleServerCommand(Event* event,
                 sendStringToPeer(msg, peer);
                 return;
             }
-            if (m_tournament_manager.GameDone(game) && !reset)
+            else if (m_tournament_manager.GameDone(game))
             {
                 if (argv.size() >= 3)
                 {
@@ -6365,9 +6371,9 @@ void ServerLobby::handleServerCommand(Event* event,
                 else
                 {
                     msg = "Game " + argv[1] + " has already been played. Use \"/game " + argv[1] + " [time]\" to play some additional time. To restart and overwrite the game, use \"/game " + argv[1] + " reset\".";
-                    sendStringToPeer(msg, peer);
-                    return;
                 }
+                sendStringToPeer(msg, peer);
+                return;
             }
             else
             {
@@ -6380,7 +6386,7 @@ void ServerLobby::handleServerCommand(Event* event,
             m_available_kts.second.clear();
             m_available_kts.second.insert("icy_soccer_field");
             m_set_field="icy_soccer_field";
-            msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
+            msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
             sendStringToAllPeers(msg);
             GlobalLog::write_Log( msg+"\n","goalLog");
         }
@@ -6392,7 +6398,7 @@ void ServerLobby::handleServerCommand(Event* event,
             m_available_kts.second.insert("addon_another-soccer-field");
             m_available_kts.second.insert("addon_forest_1");
             m_available_kts.second.insert("addon_island-soccer");
-            msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
+            msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
             sendStringToAllPeers(msg);
             GlobalLog::write_Log( msg+"\n","goalLog");
         }
@@ -6401,7 +6407,7 @@ void ServerLobby::handleServerCommand(Event* event,
             m_available_kts.second.clear();
             m_available_kts.second.insert("addon_supertournament-field");
             m_set_field="addon_supertournament-field";
-            msg = "Ready to start game " + argv[1] + " for " + std::to_string(ServerConfig::m_fixed_lap_count) + " minutes!";
+            msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
             sendStringToAllPeers(msg);
             GlobalLog::write_Log( msg+"\n","goalLog");
         }
@@ -7129,10 +7135,6 @@ void ServerLobby::onTournamentGameEnded()
         {
             std::string add_time_msg = m_tournament_manager.GetAdditionalTimeMessage();
             sendStringToAllPeers(add_time_msg);
-
-            int additional_minutes = m_tournament_manager.GetAdditionalMinutesRounded();
-            if (additional_minutes > 0)
-                ServerConfig::m_fixed_lap_count = additional_minutes;
         }
     }
 }

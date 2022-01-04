@@ -89,6 +89,7 @@ public:
     void ResumeGame(float elapsed_time);
     void HandleGameResult(float elapsed_time, GameResult result);
     void ForceEndGame();
+    void ResetGame(int index);
     void GetCurrentResult(int& red_goals, int& blue_goals);
     void SetCurrentResult(int red_goals, int blue_goals);
     float GetAdditionalSeconds() const;
