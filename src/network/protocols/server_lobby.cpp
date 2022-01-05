@@ -7214,7 +7214,7 @@ bool ServerLobby::canRace(STKPeer* peer) const
         }
     }
 
-    if (ServerConfig::m_supertournament)
+    if (ServerConfig::m_supertournament && m_state.load() == WAITING_FOR_START_GAME)
     {
         return m_tournament_manager.CanPlay(username);
     }

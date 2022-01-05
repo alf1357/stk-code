@@ -38,25 +38,28 @@ void TournamentManager::GetAdditionalTime(int& minutes, int& seconds) const
 
 void TournamentManager::OnGameEnded()
 {
-    std::string log = "Match: " + m_red_team + " vs " + m_blue_team + "\n";
-    log += "Game: " + std::to_string(m_current_game_index) + "\n";
-    log += "Result: " + std::to_string(m_current_game_result.m_red_goals) + ":" + std::to_string(m_current_game_result.m_blue_goals) + "\n";
-    for (auto& scorer : m_current_game_result.m_red_scorers)
-        log += "Goal " + m_red_team + " " + StringUtils::wideToUtf8(scorer.m_player) + " " + std::to_string(scorer.m_time) + "\n";
-    for (auto& scorer : m_current_game_result.m_blue_scorers)
-        log += "Goal " + m_blue_team + " " + StringUtils::wideToUtf8(scorer.m_player) + " " + std::to_string(scorer.m_time) + "\n";
-
-    std::ofstream logfile;
-    logfile.open(ServerConfig::m_tourn_log, std::ios_base::app);
-    if (logfile.is_open())
+    if (GameInitialized())
     {
-        logfile << log;
-        logfile.close();
-    }
-    Log::info("TournamentManager", log.c_str());
+        std::string log = "Match: " + m_red_team + " vs " + m_blue_team + "\n";
+        log += "Game: " + std::to_string(m_current_game_index) + "\n";
+        log += "Result: " + std::to_string(m_current_game_result.m_red_goals) + ":" + std::to_string(m_current_game_result.m_blue_goals) + "\n";
+        for (auto& scorer : m_current_game_result.m_red_scorers)
+            log += "Goal " + m_red_team + " " + StringUtils::wideToUtf8(scorer.m_player) + " " + std::to_string(scorer.m_time) + "\n";
+        for (auto& scorer : m_current_game_result.m_blue_scorers)
+            log += "Goal " + m_blue_team + " " + StringUtils::wideToUtf8(scorer.m_player) + " " + std::to_string(scorer.m_time) + "\n";
 
-    m_game_results[m_current_game_index] = m_current_game_result;
-    m_current_game_index = -1;
+        std::ofstream logfile;
+        logfile.open(ServerConfig::m_tourn_log, std::ios_base::app);
+        if (logfile.is_open())
+        {
+            logfile << log;
+            logfile.close();
+        }
+        Log::info("TournamentManager", log.c_str());
+
+        m_game_results[m_current_game_index] = m_current_game_result;
+        m_current_game_index = -1;
+    }
 }
 
 TournamentManager::TournamentManager()
@@ -228,7 +231,9 @@ std::string TournamentManager::GetAdditionalTimeMessage() const
     int minutes = 0, seconds = 0;
     GetAdditionalTime(minutes, seconds);
     std::string min_str = additional_minutes == 1 ? " minute" : " minutes";
-    return std::to_string(additional_minutes) + min_str + " (" + std::to_string(minutes) + ":" + std::to_string(seconds) + ") to replay.";
+    char sec_string[3];
+    sprintf(sec_string, "%02d", seconds);
+    return std::to_string(additional_minutes) + min_str + " (" + std::to_string(minutes) + ":" + sec_string + ") to replay.";
 }
 
 void TournamentManager::AddAdditionalSeconds(float seconds)
