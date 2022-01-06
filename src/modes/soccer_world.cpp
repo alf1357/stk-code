@@ -536,8 +536,8 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         ScorerData sd = {};
         // sd.m_id = m_ball_hitter; // For counting own goals
         
-	// No own goals
-	int hitter = (first_goal ? m_red_ball_hitter : m_blue_ball_hitter);
+        // No own goals
+        int hitter = (first_goal ? m_red_ball_hitter : m_blue_ball_hitter);
         if (hitter < 0)  hitter = m_ball_hitter;
         sd.m_id = hitter;
         m_red_hit_ticks = -1;
@@ -571,27 +571,29 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         core::stringw msg;
         std::string player_name = StringUtils::wideToUtf8(sd.m_player);
         std::string team_name = (first_goal ? "red" : "blue");
-	if(stopped) 
-	{
+	    if (stopped) 
+	    {
             if (first_goal)
                 ++m_bad_red_goals;
             else
                 ++m_bad_blue_goals;
             player_name += " (not counted)";
             sd.m_player = StringUtils::utf8ToWide(player_name);
-	}
+	    }
         if (sd.m_correct_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
-	    GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","goalLog");
-	    if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
-	}
+            GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","goalLog");
+            GlobalLog::close_Log("goalLog");
+            if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
+        }
         else
-	{
+        {
             msg = _("Oops, %s made an own goal!", sd.m_player);
-	    GlobalLog::write_Log("own_goal "+ player_name + " "+team_name+"\n","goalLog");
-	    if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
-	}
+            GlobalLog::write_Log("own_goal "+ player_name + " "+team_name+"\n","goalLog");
+            GlobalLog::close_Log("goalLog");
+            if (m_pos_log) GlobalLog::write_Log( "goal "+ player_name + " "+team_name+"\n","posLog");
+        }
         if (m_race_gui)
         {
             m_race_gui->addMessage(msg, NULL, 3.0f,
