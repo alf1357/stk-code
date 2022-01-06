@@ -20,10 +20,12 @@
 
 void TournamentManager::FilterScorerData(std::vector<SoccerWorld::ScorerData>& scorers)
 {
-    std::remove_if(scorers.begin(), scorers.end(), [](const SoccerWorld::ScorerData& scorer) 
-        { 
-            return StringUtils::hasSuffix(StringUtils::wideToUtf8(scorer.m_player), " (not counted)");
-        }), scorers.end();
+    for (int i = scorers.size() - 1; i >= 0; i--)
+    {
+        std::string player_name = StringUtils::wideToUtf8(scorers[i].m_player);
+        if (StringUtils::hasSuffix(player_name, " (not counted)"))
+            scorers.erase(scorers.begin() + i);
+    }
 
     for (auto& scorer : scorers)
         scorer.m_time += m_elapsed_time;
@@ -168,8 +170,8 @@ void TournamentManager::HandleGameResult(float elapsed_time, GameResult result)
     FilterScorerData(result.m_red_scorers);
     FilterScorerData(result.m_blue_scorers);
 
-    m_current_game_result.m_red_goals += result.m_red_goals;
-    m_current_game_result.m_blue_goals += result.m_blue_goals;
+    m_current_game_result.m_red_goals += result.m_red_scorers.size();
+    m_current_game_result.m_blue_goals += result.m_blue_scorers.size();
 
     m_current_game_result.m_red_scorers.insert(m_current_game_result.m_red_scorers.end(), result.m_red_scorers.begin(), result.m_red_scorers.end());
     m_current_game_result.m_blue_scorers.insert(m_current_game_result.m_blue_scorers.end(), result.m_blue_scorers.begin(), result.m_blue_scorers.end());
