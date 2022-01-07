@@ -37,19 +37,22 @@ struct GameResult
     int m_blue_goals;
     std::vector<SoccerWorld::ScorerData> m_red_scorers;
     std::vector<SoccerWorld::ScorerData> m_blue_scorers;
+    std::string m_played_field;
 
     GameResult() 
     {
         m_red_goals = 0;
         m_blue_goals = 0;
+        m_played_field = "";
     };
 
-    GameResult(int red_goals, int blue_goals, std::vector<SoccerWorld::ScorerData> red_scorers, std::vector<SoccerWorld::ScorerData> blue_scorers)
+    GameResult(std::vector<SoccerWorld::ScorerData> red_scorers, std::vector<SoccerWorld::ScorerData> blue_scorers)
     {
-        m_red_goals = red_goals;
-        m_blue_goals = blue_goals;
+        m_red_goals = 0;
+        m_blue_goals = 0;
         m_red_scorers = red_scorers;
         m_blue_scorers = blue_scorers;
+        m_played_field = "";
     }
 };
 
@@ -99,6 +102,10 @@ public:
     bool GameInitialized() const;
     bool GameOpen() const;
     bool GameDone(int index) const;
+    std::string GetPlayedField() const;
+    void SetPlayedField(std::string field);
+    bool HasRequiredAddons(const std::set<std::string>& player_tracks) const;
+    std::set<std::string> GetExcludedAddons();
 };
 
 #endif

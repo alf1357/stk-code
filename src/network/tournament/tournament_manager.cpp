@@ -44,6 +44,7 @@ void TournamentManager::OnGameEnded()
     {
         std::string log = "Match: " + m_red_team + " vs " + m_blue_team + "\n";
         log += "Game: " + std::to_string(m_current_game_index) + "\n";
+        log += "Soccer Field: " + GetPlayedField() + "\n";
         log += "Result: " + std::to_string(m_current_game_result.m_red_goals) + ":" + std::to_string(m_current_game_result.m_blue_goals) + "\n";
         for (auto& scorer : m_current_game_result.m_red_scorers)
             log += "Goal " + m_red_team + " " + StringUtils::wideToUtf8(scorer.m_player) + " " + std::to_string(scorer.m_time) + "\n";
@@ -199,10 +200,19 @@ void TournamentManager::ForceEndGame()
 void TournamentManager::ResetGame(int index)
 {
     m_current_game_index = -1;
+    m_current_game_result = GameResult();
     m_target_time = 0;
     m_stopped_at = 0;
     m_elapsed_time = 0;
     m_game_results.erase(index);
+
+    std::ofstream logfile;
+    logfile.open(ServerConfig::m_tourn_log, std::ios_base::app);
+    if (logfile.is_open())
+    {
+        logfile << "RESET Game " + std::to_string(index) + "\n";
+        logfile.close();
+    }
 }
 
 void TournamentManager::GetCurrentResult(int& red_goals, int& blue_goals)
@@ -256,6 +266,62 @@ bool TournamentManager::GameOpen() const
 bool TournamentManager::GameDone(int index) const
 {
     return m_game_results.find(index) != m_game_results.end();
+}
+
+std::string TournamentManager::GetPlayedField() const
+{
+    return m_current_game_result.m_played_field;
+}
+
+void TournamentManager::SetPlayedField(std::string field)
+{
+    m_current_game_result.m_played_field = field;
+}
+
+bool TournamentManager::HasRequiredAddons(const std::set<std::string>& player_tracks) const
+{
+    std::vector<std::string> required_fields{ "icy_soccer_field", "soccer_field", "lasdunassoccer", "addon_wood-warbler-soccer" };
+    std::vector<std::string> semi_required_fields{ "addon_supertournament-field", "addon_xr-4r3n4_1", "addon_island-soccer", "addon_forest_1" };
+
+    for (const std::string& track : required_fields)
+    {
+        if (player_tracks.find(track) == player_tracks.end())
+            return false;
+    }
+
+    int semi_required_count = 0;
+    for (const std::string& track : semi_required_fields)
+    {
+        if (player_tracks.find(track) != player_tracks.end())
+            semi_required_count++;
+    }
+
+    return semi_required_count >= 3;
+}
+
+std::set<std::string> TournamentManager::GetExcludedAddons()
+{
+    std::set<std::string> excluded_addons;
+
+    if (m_current_game_index == 2)
+    {
+        excluded_addons.insert("icy_soccer_field");
+    }
+    else if (m_current_game_index == 3)
+    {
+        excluded_addons.insert("icy_soccer_field");
+        excluded_addons.insert("soccer_field");
+        excluded_addons.insert("lasdunassoccer");
+
+        if (m_game_results.find(2) != m_game_results.end())
+        {
+            std::string field_game_2 = m_game_results[2].m_played_field;
+            if (field_game_2 != "addon_wood-warbler-soccer")
+                excluded_addons.insert(field_game_2);
+        }
+    }
+
+    return excluded_addons;
 }
 
 

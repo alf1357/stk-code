@@ -2628,11 +2628,21 @@ void ServerLobby::startSelection(const Event *event)
                     sendStringToPeer(msg, peer);
                     return;
                 }
-                else if (ServerConfig::m_supertournament && !m_tournament_manager.GameInitialized())
+                else if (ServerConfig::m_supertournament)
                 {
-                    std::string msg = "The game is not initialized yet (/game).";
-                    sendStringToPeer(msg, peer);
-                    return;
+                    std::string msg = "";
+
+                    if (!m_tournament_manager.GameInitialized())
+                        msg = "The game is not initialized yet (/game).";
+  
+                    if (!m_tournament_manager.HasRequiredAddons(peer->getClientAssets().second))
+                        msg = "You need all standard soccer fields, wood-warbler-soccer and at least 3 of the 4 addons [supertournament-field, xr-4r3n4_1, island-soccer, forest]";
+
+                    if (msg != "")
+                    {
+                        sendStringToPeer(msg, peer);
+                        return;
+                    }
                 }
                 else
                 {
@@ -2731,6 +2741,19 @@ void ServerLobby::startSelection(const Event *event)
         // arena players handling
         for (STKPeer* peer : always_spectate_peers)
             peer->setWaitingForGame(true);
+    }
+
+    if (ServerConfig::m_supertournament)
+    {
+        if (m_tournament_manager.GetPlayedField() != "")
+        {
+            m_set_field = m_tournament_manager.GetPlayedField();
+        }
+        else
+        {
+            std::set<std::string> excluded_addons = m_tournament_manager.GetExcludedAddons();
+            tracks_erase.insert(excluded_addons.begin(), excluded_addons.end());
+        }
     }
 
     //m_available_kts.first.clear();
@@ -4703,6 +4726,11 @@ bool ServerLobby::handleAllVotes(PeerVote* winner_vote,
         tracks_rate = float(track_vote->second) / cur_players;
     }
 
+    if (ServerConfig::m_supertournament)
+    {
+        m_tournament_manager.SetPlayedField(top_track);
+    }
+
     vote = 0;
     auto lap_vote = laps.begin();
     for (auto c_vote = laps.begin(); c_vote != laps.end(); c_vote++)
@@ -4781,6 +4809,7 @@ bool ServerLobby::handleAllVotes(PeerVote* winner_vote,
         *winner_vote = closest_lap->second;
         return true;
     }
+
     return false;
 }   // handleAllVotes
 
@@ -6381,47 +6410,14 @@ void ServerLobby::handleServerCommand(Event* event,
             }
         }
 
-        if (argv[1]=="1")
+        if (game >= 1 && game <= 3)
         {
-            m_available_kts.second.clear();
-            m_available_kts.second.insert("icy_soccer_field");
-            m_set_field="icy_soccer_field";
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
             sendStringToAllPeers(msg);
-            GlobalLog::write_Log( msg+"\n","goalLog");
+            GlobalLog::write_Log(msg + "\n", "goalLog");
         }
-        else if (argv[1]=="2")
-        {
-            m_available_kts.second.clear();
-            m_set_field = "";
-            m_available_kts.second.insert("soccer_field");
-            m_available_kts.second.insert("addon_another-soccer-field");
-            m_available_kts.second.insert("addon_forest_1");
-            m_available_kts.second.insert("addon_island-soccer");
-            msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
-            sendStringToAllPeers(msg);
-            GlobalLog::write_Log( msg+"\n","goalLog");
-        }
-        else if (argv[1]=="3")
-        {
-            m_available_kts.second.clear();
-            m_available_kts.second.insert("addon_supertournament-field");
-            m_set_field="addon_supertournament-field";
-            msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
-            sendStringToAllPeers(msg);
-            GlobalLog::write_Log( msg+"\n","goalLog");
-        }
-	    else
-	    {
-	        m_available_kts.second.clear();
-            m_set_field = "";
-            m_available_kts.second.insert("icy_soccer_field");
-            m_available_kts.second.insert("soccer_field");
-            m_available_kts.second.insert("addon_another-soccer-field");
-            m_available_kts.second.insert("addon_forest_1");
-            m_available_kts.second.insert("addon_island-soccer");
-            m_available_kts.second.insert("addon_supertournament-field");
-	    }
+
+        m_set_field = (game == 1) ? "icy_soccer_field" : "";
     }
     else if (argv[0] == "lobby")
     {
@@ -7128,8 +7124,7 @@ void ServerLobby::onTournamentGameEnded()
     if (w)
     {
         SoccerWorld* sw = dynamic_cast<SoccerWorld*>(World::getWorld());
-        GameResult result(sw->getScore(KART_TEAM_RED), sw->getScore(KART_TEAM_BLUE),
-            sw->getScorers(KART_TEAM_RED), sw->getScorers(KART_TEAM_BLUE));
+        GameResult result(sw->getScorers(KART_TEAM_RED), sw->getScorers(KART_TEAM_BLUE));
         m_tournament_manager.HandleGameResult(sw->getElapsedTime(), result);
         if (m_tournament_manager.GetAdditionalSeconds() > 0)
         {
@@ -7216,7 +7211,8 @@ bool ServerLobby::canRace(STKPeer* peer) const
 
     if (ServerConfig::m_supertournament && m_state.load() == WAITING_FOR_START_GAME)
     {
-        return m_tournament_manager.CanPlay(username);
+        bool player_has_addons = m_tournament_manager.HasRequiredAddons(peer->getClientAssets().second);
+        return m_tournament_manager.CanPlay(username) && player_has_addons;
     }
 
     return true;
