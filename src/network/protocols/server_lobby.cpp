@@ -4408,7 +4408,7 @@ void ServerLobby::updatePlayerList(bool update_when_reset_server)
         if (ServerConfig::m_supertournament)
         {
             std::string team = "[" + m_tournament_manager.GetTeam(user_name) + "] ";
-            if (team != "")
+            if (team != "[] ")
                 profile_name = StringUtils::utf8ToWide(team) + profile_name;
         }
 
@@ -6279,6 +6279,12 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
+	if ((m_state.load() != WAITING_FOR_START_GAME) && (m_state.load() != RACING))
+	{
+            msg = "You cannot change team while loading game!";
+            sendStringToPeer(msg, peer);
+            return;
+	}
         std::string name = argv[1];
         std::string color = argv[2];
         auto peers = STKHost::get()->getPeers();
@@ -6353,16 +6359,15 @@ void ServerLobby::handleServerCommand(Event* event,
     {
         std::string msg = "";
         if (!isVIP(peer) && !isTrusted(peer) )
+	{
             msg = "You are not server owner";
-
+            sendStringToPeer(msg, peer);
+	    return;
+        }
         if (ServerConfig::m_supertournament && argv.size() >= 3 && argv[2] == "reset")
         {
             m_tournament_manager.ResetGame(std::stoi(argv[1]));
             msg = "Game " + argv[1] + " has been reset.";
-        }
-
-        if (msg != "")
-        {
             sendStringToPeer(msg, peer);
             return;
         }
@@ -6395,7 +6400,7 @@ void ServerLobby::handleServerCommand(Event* event,
                 if (argv.size() >= 3)
                 {
                     msg = argv[2] + " additional minutes will be played for already completed game " + argv[1] + ".";
-                    m_tournament_manager.AddAdditionalSeconds(length * 60);
+                    m_tournament_manager.AddAdditionalSeconds(game , length * 60);
                 }
                 else
                 {
@@ -6434,6 +6439,18 @@ void ServerLobby::handleServerCommand(Event* event,
         sw->allToLobby();
         std::string msg = "The game will be restarted or continued.";
         sendStringToAllPeers(msg);
+    }
+    else if ((argv[0] == "referee") || (argv[0] == "video"))
+    {
+        if (!isVIP(peer) && !isTrusted(peer) )
+        {
+            std::string msg = "You are not server owner";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+	if (argv.size() < 2) return;
+        if (argv[0]=="referee") m_tournament_manager.SetReferee(argv[1]);
+	else if (argv[0]=="video") m_tournament_manager.SetVideo(argv[1]);
     }
     else if (argv[0] == "poslog")
     {

@@ -64,6 +64,9 @@ private:
     std::string m_blue_team; // "B"
     std::set<std::string> m_red_players;
     std::set<std::string> m_blue_players;
+    
+    std::string m_referee = "TheRocker";
+    std::string m_video = "https://the-rocker.de/stk-supertournament/";
 
     std::map<int, GameResult> m_game_results;
     int m_current_game_index = -1; // 1-based count index of the games
@@ -99,6 +102,7 @@ public:
     int GetAdditionalMinutesRounded() const;
     std::string GetAdditionalTimeMessage() const;
     void AddAdditionalSeconds(float seconds);
+    void AddAdditionalSeconds(int game, float seconds);
     bool GameInitialized() const;
     bool GameOpen() const;
     bool GameDone(int index) const;
@@ -106,6 +110,9 @@ public:
     void SetPlayedField(std::string field);
     bool HasRequiredAddons(const std::set<std::string>& player_tracks) const;
     std::set<std::string> GetExcludedAddons();
+
+    void SetReferee(std::string name);
+    void SetVideo(std::string name);
 };
 
 #endif
