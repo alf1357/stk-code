@@ -2396,10 +2396,10 @@ void ServerLobby::update(int ticks)
         m_state = RESULT_DISPLAY;
         sendMessageToPeers(m_result_ns, /*reliable*/ true);
         Log::info("ServerLobby", "End of game message sent");
-	GlobalLog::write_Log("GAME_END\n","goalLog");
-	if(ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_END\n","posLog");
-	GlobalLog::close_Log("goalLog");
-	GlobalLog::close_Log("posLog");
+	GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::GOAL_LOG);
+	if(ServerConfig::m_pos_log) GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::POS_LOG);
+	GlobalLog::closeLog(GlobalLogTypes::GOAL_LOG);
+	GlobalLog::closeLog(GlobalLogTypes::POS_LOG);
 	if(ServerConfig::m_pos_log)
 	{
 	    if (ServerConfig::m_temp_pos_log && ServerConfig::m_temp_pos_log_active)
@@ -2777,8 +2777,8 @@ void ServerLobby::startSelection(const Event *event)
     unsigned max_player = 0;
     STKHost::get()->updatePlayers(&max_player);
     
-    GlobalLog::write_Log("GAME_START\n","goalLog");
-    if (ServerConfig::m_pos_log) GlobalLog::write_Log("GAME_START\n","posLog");
+    GlobalLog::writeLog("GAME_START\n", GlobalLogTypes::GOAL_LOG);
+    if (ServerConfig::m_pos_log) GlobalLog::writeLog("GAME_START\n", GlobalLogTypes::POS_LOG);
 
     // Set late coming player to spectate if too many players
     auto spectators_by_limit = getSpectatorsByLimit();
@@ -6414,7 +6414,7 @@ void ServerLobby::handleServerCommand(Event* event,
         {
             msg = "Ready to start game " + argv[1] + " for " + std::to_string(length) + " minutes!";
             sendStringToAllPeers(msg);
-            GlobalLog::write_Log(msg + "\n", "goalLog");
+            GlobalLog::writeLog(msg + "\n", GlobalLogTypes::GOAL_LOG);
         }
 
         m_set_field = (game == 1) ? "icy_soccer_field" : "";

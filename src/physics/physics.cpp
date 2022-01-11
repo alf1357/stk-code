@@ -245,7 +245,7 @@ void Physics::update(int ticks)
 		    std::string log_info;
 		    if(same_team) log_info = "kart_kart " + kart_name1 + " "+kart_name2+" same_team\n";
 		    else log_info = "kart_kart " + kart_name1 + " "+kart_name2+" diff_team\n";
-		    GlobalLog::write_Log(log_info,"posLog");
+		    GlobalLog::writeLog(log_info, GlobalLogTypes::POS_LOG);
 		}
             }
             continue;
@@ -311,7 +311,7 @@ void Physics::update(int ticks)
 		if (m_pos_log)
 		{
 		    std::string log_info = "puck_hit "+kart_username+"\n";
-		    GlobalLog::write_Log(log_info,"posLog");
+		    GlobalLog::writeLog(log_info, GlobalLogTypes::POS_LOG);
 		}
             }
             continue;
@@ -396,7 +396,7 @@ void Physics::update(int ticks)
                     std::string log_info="";
 		    if (type==PowerupManager::POWERUP_BOWLING) log_info = "puck_hit_bowl " + std::to_string(current_speed) + " " + current_owner + " " + current_ball_pos + "\n";
 		    else if (type==PowerupManager::POWERUP_CAKE) log_info = "puck_hit_cake "+current_owner+"\n";
-                    GlobalLog::write_Log(log_info,"posLog");
+                    GlobalLog::writeLog(log_info, GlobalLogTypes::POS_LOG);
                 }
             }
 
@@ -429,7 +429,7 @@ void Physics::update(int ticks)
 		    {
 		        if (type==PowerupManager::POWERUP_BOWLING) log_info = current_owner + " bowled "+current_hit+"\n";
 		        else if (type==PowerupManager::POWERUP_CAKE) log_info = current_owner + " caked "+current_hit+"\n";
-                        GlobalLog::write_Log(log_info,"posLog");
+                        GlobalLog::writeLog(log_info, GlobalLogTypes::POS_LOG);
 		    }
                 }
 

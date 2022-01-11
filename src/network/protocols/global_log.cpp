@@ -7,46 +7,47 @@
 std::ofstream GlobalLog::outfile_posLog;  
 std::ofstream GlobalLog::outfile_goalLog; 
 
-void GlobalLog::open_Log(std::string log_name)
+void GlobalLog::openLog(GlobalLogTypes log_name)
 {
-    if (log_name=="posLog")
+    if (log_name == GlobalLogTypes::POS_LOG)
     {
         if (GlobalLog::outfile_posLog.is_open()) return;
         else GlobalLog::outfile_posLog.open(ServerConfig::m_pos_log_path,std::ios_base::app);
-	Log::info("!!!!","open_Log succeded");
+        Log::info("!!!!","openLog succeded");
     }
-    else if (log_name=="goalLog")
+    else if (log_name == GlobalLogTypes::GOAL_LOG)
     {
-	Log::info("!!!!","open_Log called");
+        Log::info("!!!!","openLog called");
         if (GlobalLog::outfile_goalLog.is_open()) return;
         else GlobalLog::outfile_goalLog.open(ServerConfig::m_logfile_name,std::ios_base::app);
-	Log::info("!!!!","open_Log succeded");
+        Log::info("!!!!","openLog succeded");
     }
 }
 
-void GlobalLog::write_Log(std::string text , std::string log_name)
+void GlobalLog::writeLog(std::string text, GlobalLogTypes log_name)
 {
-    open_Log(log_name);
-    if (log_name=="posLog")
+    openLog(log_name);
+    if (log_name == GlobalLogTypes::POS_LOG)
     {
         GlobalLog::outfile_posLog << text;
     }
-    else if (log_name=="goalLog")
+    else if (log_name == GlobalLogTypes::GOAL_LOG)
     {
         GlobalLog::outfile_goalLog << text;
+        GlobalLog::outfile_goalLog.flush();
     }
 }
 
-void GlobalLog::close_Log(std::string log_name)
+void GlobalLog::closeLog(GlobalLogTypes log_name)
 {
-    std::string msg= "CL called" + log_name;
-    Log::info("!!!!",msg.c_str());
-    if (log_name=="posLog")
+    std::string msg = "closeLog called " + (log_name == GlobalLogTypes::POS_LOG) ? "posLog" : "goalLog";
+    Log::info("!!!!", msg.c_str());
+    if (log_name == GlobalLogTypes::POS_LOG)
     {
         if (!GlobalLog::outfile_posLog.is_open()) return;
         else GlobalLog::outfile_posLog.close();
     }
-    else if (log_name=="goalLog")
+    else if (log_name == GlobalLogTypes::GOAL_LOG)
     {
         if (!GlobalLog::outfile_goalLog.is_open()) return;
         else GlobalLog::outfile_goalLog.close();

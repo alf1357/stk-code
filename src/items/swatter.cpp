@@ -283,7 +283,7 @@ bool Swatter::updateAndTestFinished(int ticks)
 		    {
 		        std::string swatter_owner = StringUtils::wideToUtf8(m_kart->getController()->getName());
 		        std::string swatter_hit = StringUtils::wideToUtf8(m_closest_kart->getController()->getName());
-			GlobalLog::write_Log(swatter_owner+" swattered "+swatter_hit+"\n","posLog");
+			GlobalLog::writeLog(swatter_owner+" swattered "+swatter_hit+"\n", GlobalLogTypes::POS_LOG);
 		    }
                 }
             }
