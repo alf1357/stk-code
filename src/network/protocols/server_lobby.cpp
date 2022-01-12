@@ -6322,6 +6322,31 @@ void ServerLobby::handleServerCommand(Event* event,
             }
         }
     }
+
+    else if (argv[0] == "yellow")                                                                  
+    {                                                                                              
+        if (argv.size() < 2)                                                                       
+        {                                                                                          
+            std::string msg = "Format: /yellow player_name reason";                                
+            sendStringToPeer(msg, peer);                                                           
+            return;                                                                                
+        }                                                                                          
+        if ( !(isTrusted(peer)) && !(isVIP(peer)) )                                                
+        {                                                                                          
+            std::string msg = "You are not a referee.";                                            
+            sendStringToPeer(msg, peer);                                                           
+            return;                                                                                
+        }                                                                                          
+        std::string msg = argv[1] + " was shown a yellow card by the Referee. Reason:";            
+        for (int c = 2; c < argv.size(); c++)                                                      
+        {                                                                                          
+            msg += " " + argv[c];                                                                  
+        }                                                                                          
+        sendStringToAllPeers(msg);                                                                 
+        std::string cmd = "python3 supertournament_yellow.py " + argv[1] + " &";                   
+        system(cmd.c_str());                                                                       
+    }
+         
     else if (argv[0] == "teams")
     {
         std::string msg = "";
