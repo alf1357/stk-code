@@ -38,12 +38,14 @@ struct GameResult
     std::vector<SoccerWorld::ScorerData> m_red_scorers;
     std::vector<SoccerWorld::ScorerData> m_blue_scorers;
     std::string m_played_field;
+    float m_elapsed_time;
 
     GameResult() 
     {
         m_red_goals = 0;
         m_blue_goals = 0;
         m_played_field = "";
+        m_elapsed_time = 0;
     };
 
     GameResult(std::vector<SoccerWorld::ScorerData> red_scorers, std::vector<SoccerWorld::ScorerData> blue_scorers)
@@ -53,6 +55,7 @@ struct GameResult
         m_red_scorers = red_scorers;
         m_blue_scorers = blue_scorers;
         m_played_field = "";
+        m_elapsed_time = 0;
     }
 };
 

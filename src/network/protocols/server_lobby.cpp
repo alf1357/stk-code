@@ -2636,7 +2636,7 @@ void ServerLobby::startSelection(const Event *event)
                         msg = "The game is not initialized yet (/game).";
   
                     if (!m_tournament_manager.HasRequiredAddons(peer->getClientAssets().second))
-                        msg = "You need all standard soccer fields, wood-warbler-soccer and at least 3 of the 4 addons [supertournament-field, xr-4r3n4_1, island-soccer, forest]";
+                        msg = "You need all standard soccer fields, wood-warbler-soccer and at least 3 of the 4 addons [supertournament-field, xr-4r3n4_1, island-soccer, forest_1]";
 
                     if (msg != "")
                     {

@@ -63,6 +63,7 @@ void TournamentManager::OnGameEnded()
         std::string cmd = "python3 update_matchplan.py " + m_red_team + " " + m_blue_team + " " + std::to_string(m_current_game_index) + " " + std::to_string(m_current_game_result.m_red_goals) + "-" + std::to_string(m_current_game_result.m_blue_goals) + " " + m_current_game_result.m_played_field + " " + m_referee + " " + m_video;
         system(cmd.c_str());
 
+        m_current_game_result.m_elapsed_time = m_elapsed_time;
         m_game_results[m_current_game_index] = m_current_game_result;
         m_current_game_index = -1;
     }
@@ -262,8 +263,8 @@ void TournamentManager::AddAdditionalSeconds(int game, float seconds)
     {
         m_current_game_index = game;
         m_current_game_result = m_game_results[game];
-        m_target_time = seconds;
-        m_elapsed_time = 420;
+        m_target_time = m_current_game_result.m_elapsed_time + seconds;
+        m_elapsed_time = m_current_game_result.m_elapsed_time;
         m_stopped_at = 0;
     }
 }
