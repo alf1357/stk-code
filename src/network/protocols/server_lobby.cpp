@@ -5796,7 +5796,7 @@ void ServerLobby::clientInGameWantsToBackLobby(Event* event)
                     num_players_in_game++;
 
         // If all players go back to the lobby, save the time, the scorers and the result before.
-        if (num_players_in_game == 1)
+        if (num_players_in_game == 1 && !event->getPeer()->isSpectator())
             onTournamentGameEnded();
     }
 
