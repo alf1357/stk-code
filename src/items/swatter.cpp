@@ -279,12 +279,12 @@ bool Swatter::updateAndTestFinished(int ticks)
                     m_animation_phase = SWATTER_TO_TARGET;
                     m_swatter_animation_ticks =
                         m_attachment->getTicksLeft() - 20;
-		    if (m_pos_log)
-		    {
-		        std::string swatter_owner = StringUtils::wideToUtf8(m_kart->getController()->getName());
-		        std::string swatter_hit = StringUtils::wideToUtf8(m_closest_kart->getController()->getName());
-			GlobalLog::writeLog(swatter_owner+" swattered "+swatter_hit+"\n", GlobalLogTypes::POS_LOG);
-		    }
+                    if (m_pos_log)
+                    {
+                        std::string swatter_owner = StringUtils::wideToUtf8(m_kart->getController()->getName());
+                        std::string swatter_hit = StringUtils::wideToUtf8(m_closest_kart->getController()->getName());
+                        GlobalLog::writeLog(swatter_owner+" swattered "+swatter_hit+"\n", GlobalLogTypes::POS_LOG);
+                    }
                 }
             }
             break;

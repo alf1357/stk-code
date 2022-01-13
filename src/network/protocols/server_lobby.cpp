@@ -859,7 +859,7 @@ void ServerLobby::handleChat(Event* event)
         chat->addUInt8(LE_CHAT).encodeString16(message);
         const bool game_started = m_state.load() != WAITING_FOR_START_GAME;
 
-	//teamchat
+        //teamchat
         STKPeer* sender = event->getPeer();
         auto can_receive = m_message_receivers[sender];
         bool team_speak = m_team_speakers.find(sender) != m_team_speakers.end();
@@ -872,7 +872,7 @@ void ServerLobby::handleChat(Event* event)
             teams.insert(profile->getTeam());
 
         core::stringw sender_name =
-            event->getPeer()->getPlayerProfiles()[0]->getName();	
+            event->getPeer()->getPlayerProfiles()[0]->getName();
         STKHost::get()->sendPacketToAllPeersWith(
             [game_started, sender_in_game, target_team, sender_name, muted, can_receive,team_speak,teams, this]
             (STKPeer* p)
@@ -1739,15 +1739,15 @@ void ServerLobby::asynchronousUpdate()
                     {
                         players[i]->setKartName(m_set_kart[username]);
                     }
-		    else
-		    {
-                        RandomGenerator rg;
-                        std::set<std::string>::iterator it =
-                            m_available_kts.first.begin();
-                        std::advance(it,
-                            rg.get((int)m_available_kts.first.size()));
-                        players[i]->setKartName(*it);
-		    }
+                    else
+                    {
+                            RandomGenerator rg;
+                            std::set<std::string>::iterator it =
+                                m_available_kts.first.begin();
+                            std::advance(it,
+                                rg.get((int)m_available_kts.first.size()));
+                            players[i]->setKartName(*it);
+                    }
                 }
             }
 
@@ -2396,25 +2396,25 @@ void ServerLobby::update(int ticks)
         m_state = RESULT_DISPLAY;
         sendMessageToPeers(m_result_ns, /*reliable*/ true);
         Log::info("ServerLobby", "End of game message sent");
-	GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::GOAL_LOG);
-	if(ServerConfig::m_pos_log) GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::POS_LOG);
-	GlobalLog::closeLog(GlobalLogTypes::GOAL_LOG);
-	GlobalLog::closeLog(GlobalLogTypes::POS_LOG);
-	if(ServerConfig::m_pos_log)
-	{
-	    if (ServerConfig::m_temp_pos_log && ServerConfig::m_temp_pos_log_active)
-	    {
-	        cmd = "python3 poslog2website.py " + pos_log_path;
-	        if (!ServerConfig::m_super_pos_log) ServerConfig::m_pos_log=false;
-	        ServerConfig::m_temp_pos_log_active=false;
-	        system(cmd.c_str());
-	    }
-	    else if(ServerConfig::m_super_pos_log)
-	    {
-	        cmd = "python3 poslog2website_super.py " + pos_log_path;
-	        system(cmd.c_str());
-	    }
-	}
+        GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::GOAL_LOG);
+        if(ServerConfig::m_pos_log) GlobalLog::writeLog("GAME_END\n", GlobalLogTypes::POS_LOG);
+        GlobalLog::closeLog(GlobalLogTypes::GOAL_LOG);
+        GlobalLog::closeLog(GlobalLogTypes::POS_LOG);
+        if(ServerConfig::m_pos_log)
+        {
+            if (ServerConfig::m_temp_pos_log && ServerConfig::m_temp_pos_log_active)
+            {
+                cmd = "python3 poslog2website.py " + pos_log_path;
+                if (!ServerConfig::m_super_pos_log) ServerConfig::m_pos_log=false;
+                ServerConfig::m_temp_pos_log_active=false;
+                system(cmd.c_str());
+            }
+            else if(ServerConfig::m_super_pos_log)
+            {
+                cmd = "python3 poslog2website_super.py " + pos_log_path;
+                system(cmd.c_str());
+            }
+        }
         break;
     case RESULT_DISPLAY:
         rotatePlayerQueue();
@@ -2617,7 +2617,7 @@ void ServerLobby::startSelection(const Event *event)
         std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
         if (ServerConfig::m_owner_less)
         {  
-	        if (!canRace(peer))
+            if (!canRace(peer))
             {
                 if (m_set_field != "" && !serverAndPeerHaveTrack(peer, m_set_field))
                 {
@@ -2651,12 +2651,12 @@ void ServerLobby::startSelection(const Event *event)
                     return;
                 }
             }
-	        else
-	        {
+            else
+            {
                 m_peers_ready.at(event->getPeerSP()) = !m_peers_ready.at(event->getPeerSP());
                 updatePlayerList();
                 return;
-	        }
+            }
         }
         if (event->getPeerSP() != m_server_owner.lock())
         {
@@ -4124,7 +4124,7 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
                 handicap, (uint8_t)i, KART_TEAM_NONE,
                 country_code);
 
-	    if (ServerConfig::m_supertournament)
+        if (ServerConfig::m_supertournament)
             player->setTeam(m_tournament_manager.GetKartTeam(utf8_online_name));
 
         if (ServerConfig::m_team_choosing && !(ServerConfig::m_supertournament))
@@ -5541,7 +5541,6 @@ void ServerLobby::handleServerConfiguration(Event* event)
             delete message;
             Log::verbose("ServerLobby",
                 "Player has incompatible tracks for new game mode.");
-	    
         }
     }
     NetworkString* server_info = getNetworkString();
@@ -6232,7 +6231,7 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (StringUtils::startsWith(cmd, "kick"))
     {
-	std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
         if (m_server_owner.lock() != peer && !isVIP(peer) && !isTrusted(peer))
         {
             NetworkString* chat = getNetworkString();
@@ -6279,12 +6278,12 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-	if ((m_state.load() != WAITING_FOR_START_GAME) && (m_state.load() != RACING))
-	{
+        if ((m_state.load() != WAITING_FOR_START_GAME) && (m_state.load() != RACING))
+        {
             msg = "You cannot change team while loading game!";
             sendStringToPeer(msg, peer);
             return;
-	}
+        }
         std::string name = argv[1];
         std::string color = argv[2];
         auto peers = STKHost::get()->getPeers();
@@ -6401,10 +6400,10 @@ void ServerLobby::handleServerCommand(Event* event,
     {
         std::string msg = "";
         if (!isVIP(peer) && !isTrusted(peer) )
-	{
+        {
             msg = "You are not server owner";
             sendStringToPeer(msg, peer);
-	    return;
+            return;
         }
         if (ServerConfig::m_supertournament && argv.size() >= 3 && argv[2] == "reset")
         {
@@ -6490,9 +6489,9 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-	if (argv.size() < 2) return;
+        if (argv.size() < 2) return;
         if (argv[0]=="referee") m_tournament_manager.SetReferee(argv[1]);
-	else if (argv[0]=="video") m_tournament_manager.SetVideo(argv[1]);
+        else if (argv[0]=="video") m_tournament_manager.SetVideo(argv[1]);
     }
     else if (argv[0] == "poslog")
     {
@@ -6502,8 +6501,8 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-	    ServerConfig::m_pos_log=true;
-	    ServerConfig::m_temp_pos_log_active=true;
+        ServerConfig::m_pos_log=true;
+        ServerConfig::m_temp_pos_log_active=true;
         std::string msg = "Logging of player positions activated for next game. File will be put to https://the-rocker.de/poslog";
         sendStringToPeer(msg,peer);
     }
@@ -6668,7 +6667,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
                 std::string msg2 = "setfield " + soccer_field_id;
                 Log::info("ServerLobby", msg2.c_str());
-		return;
+                return;
             }
         }
         else
@@ -6734,7 +6733,7 @@ void ServerLobby::handleServerCommand(Event* event,
                 std::string msg2 = "setkart " + kart_name;
                 Log::info("ServerLobby", msg2.c_str());
             }
-	    return;
+            return;
         }
         else
         {

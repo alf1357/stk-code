@@ -262,9 +262,9 @@ void TournamentManager::AddAdditionalSeconds(int game, float seconds)
     {
         m_current_game_index = game;
         m_current_game_result = m_game_results[game];
-	m_target_time = seconds;
-	m_elapsed_time = 420;
-	m_stopped_at = 0;
+        m_target_time = seconds;
+        m_elapsed_time = 420;
+        m_stopped_at = 0;
     }
 }
 

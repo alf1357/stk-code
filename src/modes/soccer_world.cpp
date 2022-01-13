@@ -153,8 +153,8 @@ public:
         // of ball later
         m_red_goal_slope = m_red_goal_2.z() / m_red_goal_2.x();
         m_blue_goal_slope = m_blue_goal_2.z() / m_blue_goal_2.x();
-	//std::string field_size = "Field size: "+std::to_string( m_red_goal_2.z() - m_blue_goal_2.z())+"\n";
-	//if (ServerConfig::m_pos_log) GlobalLog::write_Log(field_size,"posLog");
+        //std::string field_size = "Field size: "+std::to_string( m_red_goal_2.z() - m_blue_goal_2.z())+"\n";
+        //if (ServerConfig::m_pos_log) GlobalLog::write_Log(field_size,"posLog");
     }   // updateBallAndGoal
 
     bool isApproachingGoal(KartTeam team) const
@@ -447,19 +447,19 @@ void SoccerWorld::update(int ticks)
         {
             //if (m_xyz_str_count%10!=0) break;
             auto xyz_print = m_karts[i]->getXYZ();
-	    KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
-	    std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
+            KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
+            std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
             std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
-	    if (xyz_name2.size() < 2) continue;
+            if (xyz_name2.size() < 2) continue;
             std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
-	    GlobalLog::writeLog(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n", GlobalLogTypes::POS_LOG);
+            GlobalLog::writeLog(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n", GlobalLogTypes::POS_LOG);
         }
         auto ball_print = getBallPosition();
         if (1) //(m_xyz_str_count%10==0)
-	{
+        {
             std::string xyz_ball2 = std::to_string(ball_print[0])+" "+std::to_string(ball_print[1])+" "+std::to_string(ball_print[2]);
-	    GlobalLog::writeLog( "p " + xyz_ball2 +"\n", GlobalLogTypes::POS_LOG);
-	}
+            GlobalLog::writeLog( "p " + xyz_ball2 +"\n", GlobalLogTypes::POS_LOG);
+        }
         m_xyz_str_count+=1;
     }
     
@@ -571,15 +571,15 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         core::stringw msg;
         std::string player_name = StringUtils::wideToUtf8(sd.m_player);
         std::string team_name = (first_goal ? "red" : "blue");
-	    if (stopped) 
-	    {
+        if (stopped) 
+        {
             if (first_goal)
                 ++m_bad_red_goals;
             else
                 ++m_bad_blue_goals;
             player_name += " (not counted)";
             sd.m_player = StringUtils::utf8ToWide(player_name);
-	    }
+        }
         if (sd.m_correct_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
