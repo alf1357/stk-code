@@ -6323,6 +6323,23 @@ void ServerLobby::handleServerCommand(Event* event,
         }
     }
 
+    else if ((argv[0]=="redteam") || (argv[0]=="blueteam"))
+    {
+        std::string msg;
+        if (!ServerConfig::m_team_choosing || !RaceManager::get()->teamEnabled() || ServerConfig::m_supertournament) return;
+        if ((m_state.load() != WAITING_FOR_START_GAME) && (m_state.load() != RACING))
+        {
+            msg = "You cannot change team while loading game!";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+        auto pp = peer->getPlayerProfiles()[0];
+        peer->setAlwaysSpectate(ASM_NONE);
+        if (argv[0]=="redteam") pp->setTeam(KART_TEAM_RED);
+        else if (argv[0]=="blueteam") pp->setTeam(KART_TEAM_BLUE);
+        updatePlayerList();
+    }
+
     else if (argv[0] == "yellow")                                                                  
     {                                                                                              
         if (argv.size() < 2)                                                                       
