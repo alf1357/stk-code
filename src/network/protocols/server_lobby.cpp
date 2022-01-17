@@ -5921,8 +5921,8 @@ std::set<std::shared_ptr<STKPeer>> ServerLobby::getSpectatorsByLimit()
 {
     std::set<std::shared_ptr<STKPeer>> spectators_by_limit;
 
-    // No need for a player limit if the number of ingame players is managed by the queue
-    if (m_player_queue_limit > 0)
+    // No need for a player limit if the number of ingame players is managed by the queue or the tournament manager
+    if (m_player_queue_limit > 0 || ServerConfig::m_supertournament)
         return spectators_by_limit;
 
     auto peers = STKHost::get()->getPeers();
