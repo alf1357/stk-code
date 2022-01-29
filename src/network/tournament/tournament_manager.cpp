@@ -142,6 +142,27 @@ void TournamentManager::SetKartTeam(std::string player_name, KartTeam team)
     }
 }
 
+std::string TournamentManager::GetKart(std::string player_name) const
+{
+    return m_player_karts.count(player_name) ? m_player_karts.at(player_name) : "";
+}
+
+void TournamentManager::SetKart(std::string player_name, std::string kart_name)
+{
+    if (kart_name == "")
+        m_player_karts.erase(player_name);
+    else
+        m_player_karts[player_name] = kart_name;
+}
+
+std::set<std::string> TournamentManager::GetKartRestrictedUsers() const
+{
+    std::set<std::string> player_names;
+    for (auto& keyValue : m_player_karts)
+        player_names.insert(keyValue.first);
+    return player_names;
+}
+
 bool TournamentManager::CanPlay(std::string player_name) const
 {
     return GameInitialized() && (GetKartTeam(player_name) != KART_TEAM_NONE);
@@ -154,6 +175,7 @@ void TournamentManager::StartGame(int index, float target_time)
     m_target_time = target_time;
     m_elapsed_time = 0;
     m_stopped_at = 0;
+    m_player_karts.clear();
 }
 
 void TournamentManager::StopGame(float elapsed_time)

@@ -67,6 +67,7 @@ private:
     std::string m_blue_team; // "B"
     std::set<std::string> m_red_players;
     std::set<std::string> m_blue_players;
+    std::map<std::string, std::string> m_player_karts;
     
     std::string m_referee = "TheRocker";
     std::string m_video = "https://the-rocker.de/stk-supertournament/";
@@ -91,6 +92,9 @@ public:
     std::string GetTeam(std::string player_name);
     KartTeam GetKartTeam(std::string player_name) const;
     void SetKartTeam(std::string player_name, KartTeam team);
+    std::string GetKart(std::string player_name) const;
+    void SetKart(std::string player_name, std::string kart_name);
+    std::set<std::string> GetKartRestrictedUsers() const;
     bool CanPlay(std::string player_name) const;
 
     void StartGame(int index, float target_time);

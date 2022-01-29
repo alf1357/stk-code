@@ -633,7 +633,39 @@ void ServerLobby::updateAddons()
     else
         m_available_kts.first = { all_k.begin(), all_k.end() };
 }   // updateAddons
+//-----------------------------------------------------------------------------
+std::string ServerLobby::getSetKart(std::string player_name) const
+{
+    if (ServerConfig::m_supertournament)
+        return m_tournament_manager.GetKart(player_name);
+    return m_set_kart.count(player_name) ? m_set_kart.at(player_name) : "";
+}
 
+void ServerLobby::setSetKart(std::string player_name, std::string kart_name)
+{
+    if (ServerConfig::m_supertournament)
+    {
+        m_tournament_manager.SetKart(player_name, kart_name);
+    }
+    else
+    {
+        if (kart_name == "")
+            m_set_kart.erase(player_name);
+        else
+            m_set_kart[player_name] = kart_name;
+    }
+}
+
+std::set<std::string> ServerLobby::GetKartRestrictedUsers() const
+{
+    if (ServerConfig::m_supertournament)
+        return m_tournament_manager.GetKartRestrictedUsers();
+
+    std::set<std::string> player_names;
+    for (auto& keyValue : m_set_kart)
+        player_names.insert(keyValue.first);
+    return player_names;
+}
 //-----------------------------------------------------------------------------
 /** Called whenever server is reset or game mode is changed.
  */
@@ -1735,9 +1767,10 @@ void ServerLobby::asynchronousUpdate()
                 if (players[i]->getKartName().empty())
                 {
                     std::string username = StringUtils::wideToUtf8(players[i]->getName());
-                    if (m_set_kart.count(username))
+                    std::string set_kart = getSetKart(username);
+                    if (set_kart != "")
                     {
-                        players[i]->setKartName(m_set_kart[username]);
+                        players[i]->setKartName(set_kart);
                     }
                     else
                     {
@@ -2959,14 +2992,14 @@ void ServerLobby::startSelection(const Event *event)
         std::string username = StringUtils::wideToUtf8(
             p->getPlayerProfiles()[0]->getName());
         // return all_players.count(username) > 0;
-        bool hasKartFreedom = m_set_kart.count(username) == 0;
+        bool hasKartFreedom = getSetKart(username) == "";
         return canRace(p) && hasKartFreedom;
     }, ns, /*reliable*/true);
     delete ns;
 
     // After setkart command only one kart is available
     
-    for (auto& username_kart : m_set_kart)
+    for (std::string player_name : GetKartRestrictedUsers())
     {
         NetworkString *ns_fixedKart = getNetworkString(1);
         ns_fixedKart->setSynchronous(true);
@@ -2979,7 +3012,7 @@ void ServerLobby::startSelection(const Event *event)
 
         ns_fixedKart->addUInt16(1).addUInt16((uint16_t)all_t.size());
 
-        ns_fixedKart->encodeString(username_kart.second);
+        ns_fixedKart->encodeString(getSetKart(player_name));
 
         for (const std::string& track : all_t)
         {
@@ -2987,12 +3020,12 @@ void ServerLobby::startSelection(const Event *event)
         }
 
         STKHost::get()->sendPacketToAllPeersWith(
-            [this, username_kart](STKPeer* p) -> bool
+            [this, player_name](STKPeer* p) -> bool
         {
             std::string username = StringUtils::wideToUtf8(
                 p->getPlayerProfiles()[0]->getName());
 
-            return canRace(p) && username == username_kart.first; 
+            return canRace(p) && username == player_name;
         }, ns_fixedKart, /*reliable*/true);
 
         delete ns_fixedKart;
@@ -5718,6 +5751,13 @@ void ServerLobby::setPlayerKarts(const NetworkString& ns, STKPeer* peer) const
     unsigned player_count = ns.getUInt8();
     for (unsigned i = 0; i < player_count; i++)
     {
+        std::string player_name = StringUtils::wideToUtf8(peer->getPlayerProfiles()[i]->getName());
+        std::string set_kart = getSetKart(player_name);
+        if (set_kart != "")
+        {
+            peer->getPlayerProfiles()[i]->setKartName(set_kart);
+            continue;
+        }
         std::string kart;
         ns.decodeString(&kart);
         if (kart.find("randomkart") != std::string::npos ||
@@ -6688,6 +6728,16 @@ void ServerLobby::handleServerCommand(Event* event,
             return;
         }
 
+        if (ServerConfig::m_supertournament)
+        {
+            if (!m_tournament_manager.GameInitialized())
+            {
+                std::string msg = "The game is not initialized yet (/game). /setkart will have no effect.";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+        }
+
         std::string peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
 
         std::string kart_name = argv[1];
@@ -6715,8 +6765,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
             if (kart_name == "all")
             {
-                if (m_set_kart.count(user_name))
-                    m_set_kart.erase(user_name);
+                setSetKart(user_name, "");
                 std::string msg = user_name + " can use all karts again.";
                 sendStringToAllPeers(msg);
                 Log::info("ServerLobby", "setkart all");
@@ -6724,7 +6773,7 @@ void ServerLobby::handleServerCommand(Event* event,
             }
             else
             {
-                m_set_kart[user_name] = kart_name;
+                setSetKart(user_name, kart_name);
                 std::string msg = user_name + " will play with " + kart_name + ".";
 
                 // Send message to the lobby

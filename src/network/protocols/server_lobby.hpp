@@ -392,6 +392,9 @@ private:
     void writePlayerReport(Event* event);
     bool supportsAI();
     void updateAddons();
+    std::string getSetKart(std::string player_name) const;
+    void setSetKart(std::string player_name, std::string kart_name);
+    std::set<std::string> GetKartRestrictedUsers() const;
 public:
              ServerLobby();
     virtual ~ServerLobby();
