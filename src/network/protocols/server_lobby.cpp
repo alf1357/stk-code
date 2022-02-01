@@ -6039,7 +6039,9 @@ bool ServerLobby::checkPeersReady(bool ignore_ai_peer) const
         auto peer = p.first.lock();
         if (!peer)
             continue;
-        if (!canRace(peer))
+        std::string user_name = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        bool can_race = ServerConfig::m_supertournament ? m_tournament_manager.CanPlay(user_name) : canRace(peer);
+        if (!can_race)
             continue;
         if (ignore_ai_peer && peer->isAIPeer())
             continue;
