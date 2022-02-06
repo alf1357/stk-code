@@ -6276,12 +6276,8 @@ void ServerLobby::handleServerCommand(Event* event,
         std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
         if (m_server_owner.lock() != peer && !isVIP(peer) && !isTrusted(peer))
         {
-            NetworkString* chat = getNetworkString();
-            chat->addUInt8(LE_CHAT);
-            chat->setSynchronous(true);
-            chat->encodeString16(L"You are not server owner");
-            peer->sendPacket(chat, true/*reliable*/);
-            delete chat;
+            std::string msg = "You are not server owner";
+            sendStringToPeer(msg, peer);
             return;
         }
         std::string player_name;
@@ -6291,16 +6287,18 @@ void ServerLobby::handleServerCommand(Event* event,
             StringUtils::utf8ToWide(player_name));
         if (player_name.empty() || !player_peer || player_peer->isAIPeer())
         {
-            NetworkString* chat = getNetworkString();
-            chat->addUInt8(LE_CHAT);
-            chat->setSynchronous(true);
-            chat->encodeString16(
-                L"Usage: /kick [player name]");
-            peer->sendPacket(chat, true/*reliable*/);
-            delete chat;
+            std::string msg = "Usage: /kick [player name]";
+            sendStringToPeer(msg, peer);
+            return;
         }
         else
         {
+            if (!isVIP(peer) && (isVIP(player_peer) || isTrusted(player_peer)))
+            {
+                std::string msg = "You are not allowed to kick a moderator.";
+                sendStringToPeer(msg, peer);
+                return;
+            }
             player_peer->kick();
         }
     }
@@ -6689,6 +6687,9 @@ void ServerLobby::handleServerCommand(Event* event,
         {
             if (!isVIP(peer) && !isTrusted(peer)) return;
 
+            if (m_player_queue_limit > 10 && !(soccer_field_id == "addon_antarticy" || soccer_field_id == "addon_huge"))
+                m_player_queue_limit = ServerConfig::m_player_queue_limit;
+
             if (soccer_field_id == "all")
             {
                 m_set_field = "";
@@ -6887,10 +6888,23 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-        if (std::stoi(argv[1]) < 2) m_player_queue_limit = -1;
-        else m_player_queue_limit = std::stoi(argv[1]);
+        int limit = std::stoi(argv[1]);
+        if (limit < 2)
+        {
+            m_player_queue_limit = isVIP(peer) ? -1 : ServerConfig::m_player_queue_limit;
+        }
+        else if ((limit > 10) && !(m_set_field == "addon_antarticy" || m_set_field == "addon_huge"))
+        {
+            std::string msg = "Queue length > 10 only possible after '/setfield antarticy' or '/setfield huge'.";
+            sendStringToPeer(msg, peer);
+            return;
+        }
+        else
+        {
+            m_player_queue_limit = limit;
+        }
         updatePlayerList();
-        std::string message = "The host or server owner changed the queue length to " + argv[1];
+        std::string message = "The host or server owner changed the queue length to " + std::to_string(m_player_queue_limit);
         sendStringToAllPeers(message);
     }
     else if (argv[0] == "fake")
@@ -7204,6 +7218,8 @@ void ServerLobby::rotatePlayerQueue()
 {
     if (!(m_player_queue_limit > 0 && m_player_queue_rotatable))
         return;
+
+    if (m_player_queue_limit > 10) m_player_queue_limit = ServerConfig::m_player_queue_limit;
 
     // Rotating the queue
     if (m_player_queue.size() <= m_player_queue_limit && m_player_queue.size() > 1)
