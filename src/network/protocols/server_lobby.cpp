@@ -6688,8 +6688,10 @@ void ServerLobby::handleServerCommand(Event* event,
             if (!isVIP(peer) && !isTrusted(peer)) return;
 
             if (m_player_queue_limit > 10 && !(soccer_field_id == "addon_antarticy" || soccer_field_id == "addon_huge"))
+            {
                 m_player_queue_limit = ServerConfig::m_player_queue_limit;
-
+                updatePlayerList();
+            }
             if (soccer_field_id == "all")
             {
                 m_set_field = "";
