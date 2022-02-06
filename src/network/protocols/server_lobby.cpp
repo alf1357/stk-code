@@ -7133,7 +7133,7 @@ bool ServerLobby::isVIP(STKPeer* peer) const
     std::string username = StringUtils::wideToUtf8(
         peer->getPlayerProfiles()[0]->getName());
 
-    return m_vip_players.count(username);
+    return peer->isValidated() && m_vip_players.count(username);
 }   // isVIP
 //-----------------------------------------------------------------------------
 bool ServerLobby::isTrusted(std::shared_ptr<STKPeer>& peer) const
@@ -7145,7 +7145,7 @@ bool ServerLobby::isTrusted(STKPeer * peer) const
     std::string username = StringUtils::wideToUtf8(
         peer->getPlayerProfiles()[0]->getName());
 
-    return m_vip_players.count(username) || m_trusted_players.count(username);
+    return peer->isValidated() && (m_vip_players.count(username) || m_trusted_players.count(username));
 }  // isTrusted
 //-----------------------------------------------------------------------------
 int ServerLobby::getQueueIndex(std::string& username) const
