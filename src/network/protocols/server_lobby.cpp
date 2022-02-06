@@ -2444,7 +2444,7 @@ void ServerLobby::update(int ticks)
             }
             else if(ServerConfig::m_super_pos_log)
             {
-                cmd = "python3 poslog2website_super.py " + pos_log_path;
+                cmd = "python3 ranking.py " + pos_log_path + " &";
                 system(cmd.c_str());
             }
         }
