@@ -237,8 +237,8 @@ void Physics::update(int ticks)
                     });
                 if (m_pos_log)
                 {
-                    std::string kart_name1 = StringUtils::wideToUtf8(p->getUserPointer(0)->getPointerKart()->getController()->getName());
-                    std::string kart_name2 = StringUtils::wideToUtf8(p->getUserPointer(1)->getPointerKart()->getController()->getName());
+                    std::string kart_name1 = GlobalLog::getPlayerName(kartid1);
+                    std::string kart_name2 = GlobalLog::getPlayerName(kartid2);
                     World *world = World::getWorld();
                     bool same_team = false;
                     if (world->hasTeam()) same_team = (world->getKartTeam(p->getUserPointer(0)->getPointerKart()->getWorldKartId()) == world->getKartTeam(p->getUserPointer(1)->getPointerKart()->getWorldKartId()));
@@ -257,7 +257,7 @@ void Physics::update(int ticks)
             // -------------------------
             AbstractKart *kart = p->getUserPointer(1)->getPointerKart();
             int kartId = kart->getWorldKartId();
-            std::string kart_username = StringUtils::wideToUtf8(kart->getController()->getName());
+            std::string kart_username = GlobalLog::getPlayerName(kartId);
             PhysicalObject* obj = p->getUserPointer(0)->getPointerPhysicalObject();
             std::string obj_id = obj->getID();
             std::string scripting_function = obj->getOnKartCollisionFunction();
@@ -384,7 +384,7 @@ void Physics::update(int ticks)
                 RaceManager::get()->getMinorMode() == RaceManager::MINOR_MODE_SOCCER)
             {
                 int kartId = flyable->getOwnerId();
-                std::string current_owner = StringUtils::wideToUtf8(flyable->getOwner()->getController()->getName());
+                std::string current_owner = GlobalLog::getPlayerName(kartId);
                 SoccerWorld* soccerWorld = (SoccerWorld*)World::getWorld();
                 soccerWorld->setBallHitter(kartId);
                 if (m_pos_log)
@@ -420,8 +420,8 @@ void Physics::update(int ticks)
 
                 if (m_pos_log && world->hasTeam() && target_kart != kart)
                 {
-                    std::string current_owner = StringUtils::wideToUtf8(kart->getController()->getName());
-                    std::string current_hit = StringUtils::wideToUtf8(target_kart->getController()->getName());
+                    std::string current_owner = GlobalLog::getPlayerName(kart->getWorldKartId());
+                    std::string current_hit = GlobalLog::getPlayerName(target_kart->getWorldKartId());
                     int kartId_owner = kart->getWorldKartId();
                     int kartId_hit = target_kart->getWorldKartId();
                     std::string log_info="";
@@ -834,7 +834,6 @@ void Physics::draw()
     m_dynamics_world->debugDrawWorld();
     return;
 }   // draw
-
 // ----------------------------------------------------------------------------
 
 /* EOF */

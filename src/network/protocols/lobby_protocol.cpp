@@ -34,6 +34,7 @@
 #include "network/peer_vote.hpp"
 #include "network/protocols/game_protocol.hpp"
 #include "network/protocols/game_events_protocol.hpp"
+#include "network/protocols/global_log.hpp"
 #include "network/race_event_manager.hpp"
 #include "race/race_manager.hpp"
 #include "states_screens/online/networking_lobby.hpp"
@@ -118,6 +119,7 @@ void LobbyProtocol::configRemoteKart(
     }
     // Create the kart information for the race manager:
     // -------------------------------------------------
+    GlobalLog::resetIngamePlayers();
     for (unsigned int i = 0; i < players.size(); i++)
     {
         const std::shared_ptr<NetworkPlayerProfile>& profile = players[i];
@@ -156,6 +158,7 @@ void LobbyProtocol::configRemoteKart(
         rki.setNetworkPlayerProfile(profile);
         // Inform the race manager about the data for this kart.
         RaceManager::get()->setPlayerKart(i, rki);
+        GlobalLog::addIngamePlayer(i, StringUtils::wideToUtf8(profile->getName()), profile->isOfflineAccount());
     }   // for i in players
     // Clean all previous AI if exists in offline game
     RaceManager::get()->computeRandomKartList();

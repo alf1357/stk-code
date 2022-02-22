@@ -3701,6 +3701,9 @@ void ServerLobby::clientDisconnected(Event* event)
         Log::info("ServerLobby", "%s disconnected", name.c_str());
     }
 
+    for (const auto id : event->getPeer()->getAvailableKartIDs())
+        GlobalLog::removeIngamePlayer(id);
+
     // Don't show waiting peer disconnect message to in game player
     STKHost::get()->sendPacketToAllPeersWith([waiting_peer_disconnected]
         (STKPeer* p)
@@ -5871,7 +5874,7 @@ void ServerLobby::clientInGameWantsToBackLobby(Event* event)
         return;
     }
 
-    for (const int id : peer->getAvailableKartIDs())
+    for (const unsigned int id : peer->getAvailableKartIDs())
     {
         RemoteKartInfo& rki = RaceManager::get()->getKartInfo(id);
         if (rki.getHostId() == peer->getHostId())
@@ -5886,6 +5889,7 @@ void ServerLobby::clientInGameWantsToBackLobby(Event* event)
             Log::error("ServerLobby", "%s doesn't exist anymore in server.",
                 peer->getAddress().toString().c_str());
         }
+        GlobalLog::removeIngamePlayer(id);
     }
     NetworkItemManager* nim = dynamic_cast<NetworkItemManager*>
         (Track::getCurrentTrack()->getItemManager());

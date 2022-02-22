@@ -1,11 +1,14 @@
 #include "global_log.hpp"
 #include <network/server_config.hpp>
+#include <network/network_player_profile.hpp>
 #include <fstream>
 #include <iostream>
 #include <utils/log.hpp>
+#include <utils/string_utils.hpp>
 
 std::ofstream GlobalLog::outfile_posLog;  
-std::ofstream GlobalLog::outfile_goalLog; 
+std::ofstream GlobalLog::outfile_goalLog;
+std::map<unsigned int, std::string> GlobalLog::ingame_players;
 
 void GlobalLog::openLog(GlobalLogTypes log_name)
 {
@@ -52,4 +55,26 @@ void GlobalLog::closeLog(GlobalLogTypes log_name)
         if (!GlobalLog::outfile_goalLog.is_open()) return;
         else GlobalLog::outfile_goalLog.close();
     }
+}
+
+void GlobalLog::addIngamePlayer(unsigned int world_kart_id, std::string player_name, bool offline_account)
+{
+    std::string prefix = offline_account ? "?" : "";
+    player_name = prefix + StringUtils::replace(player_name, " ", "\t");
+    GlobalLog::ingame_players[world_kart_id] = player_name;
+}
+
+void GlobalLog::removeIngamePlayer(unsigned int world_kart_id)
+{
+    GlobalLog::ingame_players.erase(world_kart_id);
+}
+
+std::string GlobalLog::getPlayerName(unsigned int world_kart_id)
+{
+    return GlobalLog::ingame_players[world_kart_id];
+}
+
+void GlobalLog::resetIngamePlayers()
+{
+    GlobalLog::ingame_players.clear();
 }

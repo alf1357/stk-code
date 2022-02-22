@@ -441,7 +441,7 @@ void SoccerWorld::update(int ticks)
     WorldWithRank::update(ticks);
     WorldWithRank::updateTrack(ticks);
 
-    if(m_pos_log)
+    if (m_pos_log)
     {
         for (unsigned int i = 0; i < m_karts.size(); i++)
         {
@@ -449,7 +449,8 @@ void SoccerWorld::update(int ticks)
             auto xyz_print = m_karts[i]->getXYZ();
             KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
             std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
-            std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
+            //std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
+            std::string xyz_name2 = GlobalLog::getPlayerName(i);
             if (xyz_name2.size() < 2) continue;
             std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
             GlobalLog::writeLog(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n", GlobalLogTypes::POS_LOG);
@@ -550,6 +551,7 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
         sd.m_player = getKart(sd.m_id)->getController()
             ->getName(false/*include_handicap_string*/);
         sd.m_handicap_level = getKart(sd.m_id)->getHandicap();
+
         if (RaceManager::get()->getKartGlobalPlayerId(sd.m_id) > -1)
         {
             sd.m_country_code =
@@ -580,17 +582,20 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
             player_name += " (not counted)";
             sd.m_player = StringUtils::utf8ToWide(player_name);
         }
+
+        std::string player_name_log = GlobalLog::getPlayerName(sd.m_id);
+
         if (sd.m_correct_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
-            GlobalLog::writeLog( "goal "+ player_name + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
-            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
+            GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
+            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
         }
         else
         {
             msg = _("Oops, %s made an own goal!", sd.m_player);
-            GlobalLog::writeLog("own_goal "+ player_name + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
-            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
+            GlobalLog::writeLog("own_goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
+            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
         }
         if (m_race_gui)
         {
