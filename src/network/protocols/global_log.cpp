@@ -60,7 +60,8 @@ void GlobalLog::closeLog(GlobalLogTypes log_name)
 void GlobalLog::addIngamePlayer(unsigned int world_kart_id, std::string player_name, bool offline_account)
 {
     std::string prefix = offline_account ? "?" : "";
-    player_name = prefix + StringUtils::replace(player_name, " ", "\t");
+    std::string escape_char = StringUtils::wideToUtf8(L"\u03df");
+    player_name = prefix + StringUtils::replace(player_name, " ", escape_char);
     GlobalLog::ingame_players[world_kart_id] = player_name;
 }
 
