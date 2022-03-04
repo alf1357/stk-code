@@ -2010,9 +2010,9 @@ void ServerLobby::liveJoinRequest(Event* event)
             Log::info("ServerLobby", "%s live joining with reserved kart id %d.",
                 peer->getAddress().toString().c_str(), id);
             peer->addAvailableKartID(id);
-            for (auto player : peer->getPlayerProfiles())
-                m_pending_live_joiners.insert(StringUtils::wideToUtf8(player->getName()));
         }
+        for (auto player : peer->getPlayerProfiles())
+            m_pending_live_joiners.insert(StringUtils::wideToUtf8(player->getName()));
     }
     else
     {
@@ -2186,9 +2186,10 @@ void ServerLobby::finishedLoadingLiveJoinClient(Event* event)
         addLiveJoiningKart(id, rki, m_last_live_join_util_ticks);
         Log::info("ServerLobby", "%s succeeded live-joining with kart id %d.",
             peer->getAddress().toString().c_str(), id);
-        for (auto player : peer->getPlayerProfiles())
-            m_pending_live_joiners.erase(StringUtils::wideToUtf8(player->getName()));
+        GlobalLog::addIngamePlayer(id, StringUtils::wideToUtf8(rki.getPlayerName()), rki.getOnlineId() == 0);
     }
+    for (auto player : peer->getPlayerProfiles())
+        m_pending_live_joiners.erase(StringUtils::wideToUtf8(player->getName()));
     if (peer->getAvailableKartIDs().empty())
     {
         Log::info("ServerLobby", "%s spectating succeeded.",
