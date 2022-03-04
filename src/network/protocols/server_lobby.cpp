@@ -4579,6 +4579,11 @@ void ServerLobby::handlePlayerVote(Event* event)
 
     if (isVotingOver())  return;
 
+    std::string player_name = StringUtils::wideToUtf8(event->getPeer()->getPlayerProfiles()[0]->getName());
+
+    if (ServerConfig::m_supertournament && !m_tournament_manager.CountPlayerVote(player_name))
+        return;
+
     NetworkString& data = event->data();
     PeerVote vote(data);
     Log::debug("ServerLobby",

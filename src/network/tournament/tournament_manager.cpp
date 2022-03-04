@@ -168,6 +168,15 @@ bool TournamentManager::CanPlay(std::string player_name) const
     return GameInitialized() && (GetKartTeam(player_name) != KART_TEAM_NONE);
 }
 
+bool TournamentManager::CountPlayerVote(std::string player_name) const
+{
+    if (m_current_game_index == 2)
+        return GetKartTeam(player_name) == KART_TEAM_RED;
+    else if (m_current_game_index == 3)
+        return GetKartTeam(player_name) == KART_TEAM_BLUE;
+    return true;
+}
+
 void TournamentManager::StartGame(int index, float target_time)
 {
     m_current_game_index = index;

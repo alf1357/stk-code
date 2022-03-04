@@ -96,6 +96,7 @@ public:
     void SetKart(std::string player_name, std::string kart_name);
     std::set<std::string> GetKartRestrictedUsers() const;
     bool CanPlay(std::string player_name) const;
+    bool CountPlayerVote(std::string player_name) const;
 
     void StartGame(int index, float target_time);
     void StopGame(float elapsed_time);
