@@ -328,7 +328,7 @@ void TournamentManager::SetPlayedField(std::string field)
 bool TournamentManager::HasRequiredAddons(const std::set<std::string>& player_tracks) const
 {
     std::vector<std::string> required_fields{ "icy_soccer_field", "soccer_field", "lasdunassoccer", "addon_wood-warbler-soccer" };
-    std::vector<std::string> semi_required_fields{ "addon_supertournament-field", "addon_xr-4r3n4_1", "addon_island-soccer", "addon_forest_1" };
+    std::vector<std::string> semi_required_fields{ "addon_xr-4r3n4_1", "addon_island-soccer", "addon_tournament-field", "addon_tiny", "addon_syncopia-stadium" };
 
     for (const std::string& track : required_fields)
     {
@@ -343,7 +343,7 @@ bool TournamentManager::HasRequiredAddons(const std::set<std::string>& player_tr
             semi_required_count++;
     }
 
-    return semi_required_count >= 3;
+    return semi_required_count >= 4;
 }
 
 std::set<std::string> TournamentManager::GetExcludedAddons()
