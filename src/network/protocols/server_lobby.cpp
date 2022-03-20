@@ -6506,6 +6506,12 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
+        if (!isVIP(peer) && argv.size() > 2)
+        {
+            msg = "Please specify a correct number. Format: /game [number]";
+            sendStringToPeer(msg, peer);
+            return;
+        }
         if (ServerConfig::m_supertournament && argv.size() >= 3 && argv[2] == "reset")
         {
             m_tournament_manager.ResetGame(std::stoi(argv[1]));
@@ -6568,7 +6574,7 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (argv[0] == "lobby")
     {
-        if (!isVIP(peer) && !isTrusted(peer) )
+        if (!isVIP(peer) && (ServerConfig::m_supertournament || !isTrusted(peer)) )
         {
             std::string msg = "You are not server owner";
             sendStringToPeer(msg, peer);
@@ -6610,7 +6616,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
     else if (argv[0] == "stop")
     {
-        if (!isVIP(peer) && !isTrusted(peer) )
+        if (!isVIP(peer))
         {
             std::string msg = "You are not server owner";
             sendStringToPeer(msg, peer);
@@ -6628,7 +6634,7 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (argv[0] == "go")
     {
-        if (!isVIP(peer) && !isTrusted(peer) )
+        if (!isVIP(peer))
         {
             std::string msg = "You are not server owner";
             sendStringToPeer(msg, peer);
@@ -6649,7 +6655,7 @@ void ServerLobby::handleServerCommand(Event* event,
         std::string msg = "";
         if (!ServerConfig::m_supertournament)
             msg = "This command is only for SuperTournament.";
-        if (!isVIP(peer) && !isTrusted(peer))
+        if (!isVIP(peer))
             msg = "You are not server owner";
 
         int red = 0, blue = 0;
@@ -6673,7 +6679,7 @@ void ServerLobby::handleServerCommand(Event* event,
         std::string msg = "";
         if (!ServerConfig::m_supertournament)
             msg = "This command is only for SuperTournament.";
-        if (!isVIP(peer) && !isTrusted(peer))
+        if (!isVIP(peer))
             msg = "You are not server owner";
         if (!m_state.load() == WAITING_FOR_START_GAME)
             msg = "This commmand can only be used in the lobby.";
@@ -6690,7 +6696,6 @@ void ServerLobby::handleServerCommand(Event* event,
     else if (argv[0] == "setfield" || argv[0] == "settrack")
     {
         bool isField = (argv[0] == "setfield");
-        Log::info("ServerLobby","Hello");
 
         if (argv.size() != 2)
         {
@@ -6746,7 +6751,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
         if (found)
         {
-            if (!isVIP(peer) && !isTrusted(peer)) return;
+            if (!isVIP(peer) && (!isTrusted(peer) || ServerConfig::m_supertournament)) return;
 
             if (m_player_queue_limit > 10 && !(soccer_field_id == "addon_antarticy" || soccer_field_id == "addon_huge"))
             {

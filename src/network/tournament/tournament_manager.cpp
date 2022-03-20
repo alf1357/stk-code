@@ -357,8 +357,6 @@ std::set<std::string> TournamentManager::GetExcludedAddons()
     else if (m_current_game_index == 3)
     {
         excluded_addons.insert("icy_soccer_field");
-        excluded_addons.insert("soccer_field");
-        excluded_addons.insert("lasdunassoccer");
 
         if (m_game_results.find(2) != m_game_results.end())
         {
