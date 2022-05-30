@@ -3,7 +3,7 @@
 In order to build SuperTuxKart from source, you'll need both the code and the assets (See <https://supertuxkart.net/Source_control> for more information):
 
 ```bash
-git clone https://github.com/supertuxkart/stk-code stk-code
+git clone https://github.com/STK-TheRocker/stk-code stk-code
 svn co https://svn.code.sf.net/p/supertuxkart/code/stk-assets stk-assets
 ```
 
