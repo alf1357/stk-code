@@ -300,7 +300,6 @@ void SoccerWorld::init()
 
     Track *track = Track::getCurrentTrack();
     std::string track_name = StringUtils::wideToUtf8(track -> getName());
-    if(m_pos_log) GlobalLog::writeLog("Addon: "+track_name+"\n", GlobalLogTypes::POS_LOG);
     if (track->hasNavMesh())
     {
         // Init track sector for ball if navmesh is found

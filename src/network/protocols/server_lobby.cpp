@@ -1795,6 +1795,7 @@ void ServerLobby::asynchronousUpdate()
                 ServerConfig::m_flag_deactivated_time);
             RaceManager::get()->setFlagDeactivatedTicks(flag_deactivated_time);
             configRemoteKart(players, 0);
+            if(ServerConfig::m_pos_log) GlobalLog::writeLog("Addon: " + winner_vote.m_track_name+"\n", GlobalLogTypes::POS_LOG);
 
             // Spectators who don't have the played track will stay in the lobby
             auto peers = STKHost::get()->getPeers();
@@ -2936,7 +2937,7 @@ void ServerLobby::startSelection(const Event *event)
                 m_default_vote->m_num_laps =
                     (uint8_t)(UserConfigParams::m_num_goals);
                 if (m_default_vote->m_num_laps > 10)
-                    m_default_vote->m_num_laps = (uint8_t)5;
+                    m_default_vote->m_num_laps = (uint8_t)10;
             }
             else
             {
@@ -4628,7 +4629,7 @@ void ServerLobby::handlePlayerVote(Event* event)
                                             UserConfigParams::m_num_goals);
             }
             else if (vote.m_num_laps > 10 || vote.m_num_laps < 5)  //prevent too low limit
-                vote.m_num_laps = (uint8_t)5;
+                vote.m_num_laps = (uint8_t)10;
         }
         else
         {
