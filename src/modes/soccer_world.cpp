@@ -582,19 +582,13 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
             sd.m_player = StringUtils::utf8ToWide(player_name);
         }
 
-        std::string player_name_log = GlobalLog::getPlayerName(sd.m_id);
-
         if (sd.m_correct_goal)
         {
             msg = _("%s scored a goal!", sd.m_player+"\n");
-            GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
-            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
         }
         else
         {
             msg = _("Oops, %s made an own goal!", sd.m_player);
-            GlobalLog::writeLog("own_goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
-            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
         }
         if (m_race_gui)
         {
@@ -615,6 +609,7 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
             // Notice: true first_goal means it's blue goal being shoot,
             // so red team can score
             m_red_scorers.push_back(sd);
+	    Log::info("GoalPhase","Ausgabe 2");
         }
         else
         {
@@ -626,6 +621,22 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
                 sd.m_time = getTime();
             m_blue_scorers.push_back(sd);
         }
+
+	Log::info("GoalPhase","Ausgabe 3");
+        std::string player_name_log = GlobalLog::getPlayerName(sd.m_id);
+        std::string team_name = (first_goal ? "red" : "blue");
+
+        if (sd.m_correct_goal)
+	{
+            GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
+            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
+	}
+	else
+	{
+            GlobalLog::writeLog("own_goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::GOAL_LOG);
+            if (m_pos_log) GlobalLog::writeLog( "goal "+ player_name_log + " "+team_name+"\n", GlobalLogTypes::POS_LOG);
+	}
+
         if (NetworkConfig::get()->isNetworking() &&
             NetworkConfig::get()->isServer())
         {

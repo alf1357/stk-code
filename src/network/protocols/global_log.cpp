@@ -36,6 +36,7 @@ void GlobalLog::writeLog(std::string text, GlobalLogTypes log_name)
     }
     else if (log_name == GlobalLogTypes::GOAL_LOG)
     {
+	Log::info("!!!!",text.c_str());
         GlobalLog::outfile_goalLog << text;
         GlobalLog::outfile_goalLog.flush();
     }

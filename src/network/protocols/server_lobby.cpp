@@ -1795,7 +1795,7 @@ void ServerLobby::asynchronousUpdate()
                 ServerConfig::m_flag_deactivated_time);
             RaceManager::get()->setFlagDeactivatedTicks(flag_deactivated_time);
             configRemoteKart(players, 0);
-            if(ServerConfig::m_pos_log) GlobalLog::writeLog("Addon: " + winner_vote.m_track_name+"\n", GlobalLogTypes::POS_LOG);
+	    if(ServerConfig::m_pos_log) GlobalLog::writeLog("Addon: " + winner_vote.m_track_name+"\n", GlobalLogTypes::POS_LOG);
 
             // Spectators who don't have the played track will stay in the lobby
             auto peers = STKHost::get()->getPeers();
