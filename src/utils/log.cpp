@@ -266,6 +266,7 @@ void Log::writeLine(const char *line, int level)
             CIrrDeviceiOS::debugPrint(line);
 #else
             printf("%s", line);
+            fflush(stdout);
 #endif
         }
         resetTerminalColor();  // this prints a \n
@@ -277,7 +278,12 @@ void Log::writeLine(const char *line, int level)
     if (m_buffer_size <= 1) OutputDebugStringA(line);
 #endif
 
-    if (m_file_stdout) fprintf(m_file_stdout, "%s", line);
+    if (m_file_stdout)  // this is not real stdout, its just a name fora logfile handle
+    {
+        fprintf(m_file_stdout, "%s", line);  // this line writes to a file with NO buffering!
+        // fflush(m_file_stdout);
+        // as i've seen setvbuf(m_file_stdout,...) used on this... flush is useless
+    }
 
 #ifdef WIN32
     if (level >= LL_FATAL)

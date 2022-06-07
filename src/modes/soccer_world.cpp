@@ -609,7 +609,6 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
             // Notice: true first_goal means it's blue goal being shoot,
             // so red team can score
             m_red_scorers.push_back(sd);
-	    Log::info("GoalPhase","Ausgabe 2");
         }
         else
         {
@@ -622,7 +621,6 @@ void SoccerWorld::onCheckGoalTriggered(bool first_goal)
             m_blue_scorers.push_back(sd);
         }
 
-	Log::info("GoalPhase","Ausgabe 3");
         std::string player_name_log = GlobalLog::getPlayerName(sd.m_id);
         std::string team_name = (first_goal ? "red" : "blue");
 
