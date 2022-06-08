@@ -24,7 +24,9 @@
 #include "network/stk_peer.hpp"
 #include "network/protocols/server_lobby.hpp"
 #include "utils/time.hpp"
+#include "utils/string_utils.hpp"
 #include "utils/vs.hpp"
+#include "utils/log.hpp"
 #include "main_loop.hpp"
 
 #include <iostream>
@@ -97,30 +99,20 @@ void mainLoop(STKHost* host)
     std::string str = "";
     while (!host->requestedShutdown())
     {
-#ifndef WIN32
-        if (!pollCommand())
-            continue;
-
-        std::stringstream ss(g_cmd_buffer);
-        if (g_cmd_buffer.empty())
-            continue;
-        g_cmd_buffer.clear();
-#else
         getline(std::cin, str);
-        std::stringstream ss(str);
-#endif
-
-        int number = -1;
-        ss >> str >> number;
-        if (str == "help")
+        #ifndef WIN32
+            g_cmd_buffer.clear();
+        #endif
+        auto str2 = StringUtils::split(str,' ');
+        if (str2[0] == "help")
         {
             showHelp();
         }
-        else if (str == "quit")
+        else if (str2[0] == "quit")
         {
             host->requestShutdown();
         }
-        else if (str == "kickall")
+        else if (str2[0] == "kickall")
         {
             auto peers = host->getPeers();
             for (unsigned int i = 0; i < peers.size(); i++)
@@ -128,18 +120,24 @@ void mainLoop(STKHost* host)
                 peers[i]->kick();
             }
         }
-        else if (str == "kick" && number != -1 &&
+        else if (str2[0] == "kick" &&
             NetworkConfig::get()->isServer())
         {
+            if (str2.size()<2) continue;
+            int number = std::stoi(str2[2]);
+            if (number<0) continue;
             std::shared_ptr<STKPeer> peer = host->findPeerByHostId(number);
             if (peer)
                 peer->kick();
             else
                 std::cout << "Unknown host id: " << number << std::endl;
         }
-        else if (str == "kickban" && number != -1 &&
+        else if (str2[0] == "kickban" &&
             NetworkConfig::get()->isServer())
         {
+            if (str2.size()<2) continue;
+            int number = std::stoi(str2[2]);
+            if (number<0) continue;
             std::shared_ptr<STKPeer> peer = host->findPeerByHostId(number);
             if (peer)
             {
@@ -153,7 +151,7 @@ void mainLoop(STKHost* host)
             else
                 std::cout << "Unknown host id: " << number << std::endl;
         }
-        else if (str == "listpeers")
+        else if (str2[0] == "listpeers")
         {
             auto peers = host->getPeers();
             if (peers.empty())
@@ -165,13 +163,30 @@ void mainLoop(STKHost* host)
                     peers[i]->getUserVersion() << std::endl;
             }
         }
-        else if (str == "listban")
+        else if (str2[0] == "listban")
         {
             auto sl = LobbyProtocol::get<ServerLobby>();
             if (sl)
                 sl->listBanTable();
         }
-        else if (str == "speedstats")
+        else if (str2[0] == "chat")
+        {
+            std::string msg ="Server: ";
+            if (str2.size()<2) continue;
+            for (int i = 1 ; i < str2.size();i++)
+            {
+                msg += str2[i] + " ";
+            }
+            auto sl = LobbyProtocol::get<ServerLobby>();
+            auto peers = host->getPeers();
+            std::cout << msg << std::endl;
+            for (int i = 0; i < peers.size(); i++)
+            {
+                sl -> sendStringToPeer(msg,peers[i]) ;
+            }
+        }
+
+        else if (str2[0] == "speedstats")
         {
             std::cout << "Upload speed (KBps): " <<
                 (float)host->getUploadSpeed() / 1024.0f <<
@@ -180,7 +195,7 @@ void mainLoop(STKHost* host)
         }
         else
         {
-            std::cout << "Unknown command: " << str << std::endl;
+            std::cout << "Unknown command: " << str2[0] << std::endl;
         }
     }   // while !stop
     main_loop->requestAbort();
