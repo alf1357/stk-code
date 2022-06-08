@@ -124,7 +124,7 @@ void mainLoop(STKHost* host)
             NetworkConfig::get()->isServer())
         {
             if (str2.size()<2) continue;
-            int number = std::stoi(str2[2]);
+            int number = std::stoi(str2[1]);
             if (number<0) continue;
             std::shared_ptr<STKPeer> peer = host->findPeerByHostId(number);
             if (peer)
@@ -136,7 +136,7 @@ void mainLoop(STKHost* host)
             NetworkConfig::get()->isServer())
         {
             if (str2.size()<2) continue;
-            int number = std::stoi(str2[2]);
+            int number = std::stoi(str2[1]);
             if (number<0) continue;
             std::shared_ptr<STKPeer> peer = host->findPeerByHostId(number);
             if (peer)
