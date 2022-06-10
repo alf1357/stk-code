@@ -373,7 +373,6 @@ private:
     std::vector<std::shared_ptr<NetworkPlayerProfile> > getLivePlayers() const;
     void setPlayerKarts(const NetworkString& ns, STKPeer* peer) const;
     bool handleAssets(const NetworkString& ns, STKPeer* peer);
-    void handleServerCommand(Event* event, std::shared_ptr<STKPeer> peer);
     void liveJoinRequest(Event* event);
     void rejectLiveJoin(STKPeer* peer, BackLobbyReason blr);
     bool canLiveJoinNow() const;
@@ -436,6 +435,7 @@ public:
     bool isVIP(STKPeer* peer) const;
     bool isTrusted(std::shared_ptr<STKPeer>& peer) const;
     bool isTrusted(STKPeer* peer) const;
+    void handleServerCommand(Event* event, std::shared_ptr<STKPeer> peer,std::string chat_cmd);
 
     // Player queue
     int getQueueIndex(std::string& username) const;
@@ -448,6 +448,7 @@ public:
 
     std::set<std::string> m_vip_players;
     std::set<std::string> m_trusted_players;
+    std::vector<std::string> m_console_commands = {"listserveraddon","sethost","yellow","teams","game","lobby","video","referee","stop","go","end","setfield","setkart","serverhasddon","queue","fake","unfake","xmute","xunmute","kick"};
     void sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const;
     void sendStringToAllPeers(std::string& s);
     bool serverAndPeerHaveTrack(std::shared_ptr<STKPeer>& peer, std::string track_id) const;

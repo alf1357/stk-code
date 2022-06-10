@@ -26,6 +26,8 @@ data/.svn
 
 # Ignore doxygen output
 src/html
+# Ignore cache
+src/.cache
 
 *.o
 *.d

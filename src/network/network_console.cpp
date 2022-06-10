@@ -103,7 +103,7 @@ void mainLoop(STKHost* host)
         #ifndef WIN32
             g_cmd_buffer.clear();
         #endif
-        auto str2 = StringUtils::split(str,' ');
+        std::vector<std::string> str2 = StringUtils::split(str,' ');
         if (str2[0] == "help")
         {
             showHelp();
@@ -173,16 +173,29 @@ void mainLoop(STKHost* host)
         {
             std::string msg ="Server: ";
             if (str2.size()<2) continue;
+            bool send_cmd = false;
+            if (str2[1][0] == '/')
+            {
+                send_cmd = true;
+                str2[1].erase(0,1);
+                msg = "";
+            }
             for (int i = 1 ; i < str2.size();i++)
             {
                 msg += str2[i] + " ";
             }
             auto sl = LobbyProtocol::get<ServerLobby>();
-            auto peers = host->getPeers();
-            std::cout << msg << std::endl;
-            for (int i = 0; i < peers.size(); i++)
+            
+            if (send_cmd)
+                sl -> handleServerCommand(NULL,NULL,msg);
+            else
             {
-                sl -> sendStringToPeer(msg,peers[i]) ;
+                auto peers = host->getPeers();
+                std::cout << msg << std::endl;
+                for (int i = 0; i < peers.size(); i++)
+                {
+                    sl -> sendStringToPeer(msg,peers[i]) ;
+                }
             }
         }
 

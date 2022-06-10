@@ -66,6 +66,7 @@
 #include <iostream>
 #include <regex>
 #include <iterator>
+#include <vector>
 
 
 // ========================================================================
@@ -1034,7 +1035,7 @@ bool ServerLobby::notifyEventAsynchronous(Event* event)
         case LE_ASSETS_UPDATE:
             handleAssets(event->data(), event->getPeer());        break;
         case LE_COMMAND:
-            handleServerCommand(event, event->getPeerSP());       break;
+            handleServerCommand(event, event->getPeerSP(),"");       break;
         default:                                                  break;
         }   // switch
     } // if (event->getType() == EVENT_TYPE_MESSAGE)
@@ -4249,6 +4250,18 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
     if (game_started)
     {
         peer->setWaitingForGame(true);
+        if (!ServerConfig::m_sql_management)
+        {
+            for (std::shared_ptr<NetworkPlayerProfile>& npp :
+                peer->getPlayerProfiles())
+            {
+                Log::info("ServerLobby",
+                    "New player %s with online id %u from %s with %s.",
+                    StringUtils::wideToUtf8(npp->getName()).c_str(),
+                    npp->getOnlineId(), peer->getAddress().toString().c_str(),
+                    peer->getUserVersion().c_str());
+            }
+        }
         updatePlayerList();
         peer->sendPacket(message_ack);
         delete message_ack;
@@ -6066,18 +6079,32 @@ bool ServerLobby::checkPeersReady(bool ignore_ai_peer) const
 
 //-----------------------------------------------------------------------------
 void ServerLobby::handleServerCommand(Event* event,
-                                      std::shared_ptr<STKPeer> peer)
+                                      std::shared_ptr<STKPeer> peer,
+                                      std::string chat_cmd = "")
 {
-    NetworkString& data = event->data();
-    std::string language;
-    data.decodeString(&language);
     std::string cmd;
-    data.decodeString(&cmd);
+    std::string peer_username;
+    if (event==NULL or peer==NULL)
+    {
+        cmd = chat_cmd;
+    }
+    else
+    {
+        NetworkString& data = event->data();
+        std::string language;
+        data.decodeString(&language);
+        data.decodeString(&cmd);
+        peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+    }
     auto argv = StringUtils::split(cmd, ' ');
     if (argv.size() == 0)
         return;
-    std::string peer_username = StringUtils::wideToUtf8(
-        peer->getPlayerProfiles()[0]->getName());
+    if ((event==NULL or peer==NULL) and (std::find(m_console_commands.begin(), m_console_commands.end(), argv[0]) == m_console_commands.end()))
+    {
+        Log::info("ServerLobby","Wrong command used.");
+        return;
+    }
+
     if (argv[0] == "spectate")
     {
         if (m_game_setup->isGrandPrix() || !ServerConfig::m_live_players)
@@ -6285,33 +6312,40 @@ void ServerLobby::handleServerCommand(Event* event,
     }
     else if (StringUtils::startsWith(cmd, "kick"))
     {
-        std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
-        if (m_server_owner.lock() != peer && !isVIP(peer) && !isTrusted(peer))
+        if (argv.size()<2) return;
+        std::string player_name = argv[1];
+        std::shared_ptr<STKPeer> player_peer = STKHost::get()->findPeerByName(StringUtils::utf8ToWide(player_name));
+        if (peer!=NULL)
         {
-            std::string msg = "You are not server owner";
-            sendStringToPeer(msg, peer);
-            return;
-        }
-        std::string player_name;
-        if (cmd.length() > 5)
-            player_name = cmd.substr(5);
-        std::shared_ptr<STKPeer> player_peer = STKHost::get()->findPeerByName(
-            StringUtils::utf8ToWide(player_name));
-        if (player_name.empty() || !player_peer || player_peer->isAIPeer())
-        {
-            std::string msg = "Usage: /kick [player name]";
-            sendStringToPeer(msg, peer);
-            return;
-        }
-        else
-        {
-            if (!isVIP(peer) && (isVIP(player_peer) || isTrusted(player_peer)))
+            std::string username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+            if (m_server_owner.lock() != peer && !isVIP(peer) && !isTrusted(peer))
             {
-                std::string msg = "You are not allowed to kick a moderator.";
+                std::string msg = "You are not server owner";
                 sendStringToPeer(msg, peer);
                 return;
             }
+            if (player_name.empty() || !player_peer || player_peer->isAIPeer())
+            {
+                std::string msg = "Usage: /kick [player name]";
+                sendStringToPeer(msg, peer);
+                return;
+            }
+            else
+            {
+                if (!isVIP(peer) && (isVIP(player_peer) || isTrusted(player_peer)))
+                {
+                    std::string msg = "You are not allowed to kick a moderator.";
+                    sendStringToPeer(msg, peer);
+                    return;
+                }
+                player_peer->kick();
+            }
+        }
+        else
+        {
+            if (player_name.empty() || !player_peer || player_peer->isAIPeer()) return;
             player_peer->kick();
+            Log::info("ServerLobby","Kicked Player %s by console.",player_name.c_str());
         }
     }
     else if (argv[0] == "sethost")
@@ -6328,8 +6362,11 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-
-        std::string peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        std::string peer_username;
+        if (peer!=NULL)
+        {
+            peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        }
         std::string user_name = (argv.size() == 2 ? argv[1] : peer_username);
         if (argv.size() == 1)
             cmd += " " + user_name;
@@ -6705,7 +6742,8 @@ void ServerLobby::handleServerCommand(Event* event,
             return;
         }
 
-        std::string peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        std::string peer_username;
+        if (peer!=NULL) peer_username= StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
 
         std::string soccer_field_id = argv[1];
 
@@ -6735,19 +6773,35 @@ void ServerLobby::handleServerCommand(Event* event,
 
 
         // Check that peer and server have the track
-        std::shared_ptr<STKPeer> player_peer = STKHost::get()->findPeerByName(StringUtils::utf8ToWide(peer_username));
-
-        bool found = serverAndPeerHaveTrack(player_peer, soccer_field_id) || soccer_field_id == "all";
-
-        if (!(found))
+        bool found = false;
+        if (peer!=NULL)
         {
-            std::string addon_id = "addon_" + soccer_field_id;
-            bool found_addon = serverAndPeerHaveTrack(player_peer, addon_id);
-            if (found_addon)
-            {
-                soccer_field_id = addon_id;
-                found = true;
+            std::shared_ptr<STKPeer> player_peer = STKHost::get()->findPeerByName(StringUtils::utf8ToWide(peer_username));
+            found = serverAndPeerHaveTrack(player_peer, soccer_field_id) || soccer_field_id == "all";
+            if (!found)
+            {    
+                found = serverAndPeerHaveTrack(player_peer, "addon_" + soccer_field_id);
+                if (found) soccer_field_id = "addon_" + soccer_field_id;
             }
+        }
+        if (peer==NULL)
+        {
+            auto peers = STKHost::get()->getPeers();
+            for (auto& peer2 : peers)
+            {
+                if (!found) found = serverAndPeerHaveTrack(peer2, soccer_field_id) || soccer_field_id == "all";
+                if (!found)
+                {
+                    found = serverAndPeerHaveTrack(peer2, "addon_" + soccer_field_id);
+                    if (found)
+                    {
+                        soccer_field_id = "addon_" + soccer_field_id;
+                        break;
+                    }
+                }
+                else break;
+            }
+            if (soccer_field_id == "all") found = true;
         }
 
         if (found)
@@ -6809,11 +6863,13 @@ void ServerLobby::handleServerCommand(Event* event,
                 return;
             }
         }
-
-        std::string peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
+        std::string peer_username="";
+        if (peer!=NULL) peer_username = StringUtils::wideToUtf8(peer->getPlayerProfiles()[0]->getName());
 
         std::string kart_name = argv[1];
         std::string user_name = (argv.size() == 3 ? argv[2] : peer_username);
+
+        if (user_name=="") return;
 
         bool serverHasKart = (m_official_kts.first.find(kart_name) != m_official_kts.first.end()) ||
             (m_addon_kts.first.find(kart_name) != m_addon_kts.first.end());
@@ -7192,11 +7248,13 @@ unmute_error:
 
 bool ServerLobby::isVIP(std::shared_ptr<STKPeer>& peer) const
 {
+    if (peer==NULL) return true;
     return isVIP(peer.get());
 }
 //-----------------------------------------------------------------------------
 bool ServerLobby::isVIP(STKPeer* peer) const
 {
+    if (peer==NULL) return true;
     std::string username = StringUtils::wideToUtf8(
         peer->getPlayerProfiles()[0]->getName());
 
@@ -7205,10 +7263,12 @@ bool ServerLobby::isVIP(STKPeer* peer) const
 //-----------------------------------------------------------------------------
 bool ServerLobby::isTrusted(std::shared_ptr<STKPeer>& peer) const
 {
+    if (peer==NULL) return true;
     return isTrusted(peer.get());
 }
 bool ServerLobby::isTrusted(STKPeer * peer) const
 {
+    if (peer==NULL) return true;
     std::string username = StringUtils::wideToUtf8(
         peer->getPlayerProfiles()[0]->getName());
 
@@ -7331,6 +7391,11 @@ void ServerLobby::onTournamentGameEnded()
 //-----------------------------------------------------------------------------
 void ServerLobby::sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const
 {
+    if (peer==NULL)
+    {
+        Log::info("ServerLobby",s.c_str());
+        return;
+    }
     NetworkString* chat = getNetworkString();
     chat->addUInt8(LE_CHAT);
     chat->setSynchronous(true);
@@ -7342,6 +7407,7 @@ void ServerLobby::sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& pee
 //-----------------------------------------------------------------------------
 void ServerLobby::sendStringToAllPeers(std::string& s)
 {
+    Log::info("ServerLobby",s.c_str());
     NetworkString* chat = getNetworkString();
     chat->addUInt8(LE_CHAT);
     chat->setSynchronous(true);
