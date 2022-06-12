@@ -4133,8 +4133,6 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
 
         name = i == 0 && !online_name.empty() && !peer->isAIPeer() ? online_name : name;
         std::string utf8_name = StringUtils::wideToUtf8(name);
-        std::string log_name = utf8_name + " " + utf8_online_name;
-        Log::info("", log_name.c_str());
 
         if (m_faked_players.count(utf8_name))
         {
@@ -4250,21 +4248,18 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
         }
     }
 
+    for (std::shared_ptr<NetworkPlayerProfile>& npp :
+        peer->getPlayerProfiles())
+    {
+        Log::info("ServerLobby",
+            "New player %s with online id %u from %s with %s.",
+            StringUtils::wideToUtf8(npp->getName()).c_str(),
+            npp->getOnlineId(), peer->getAddress().toString().c_str(),
+            peer->getUserVersion().c_str());
+    }
     if (game_started)
     {
         peer->setWaitingForGame(true);
-        if (!ServerConfig::m_sql_management)
-        {
-            for (std::shared_ptr<NetworkPlayerProfile>& npp :
-                peer->getPlayerProfiles())
-            {
-                Log::info("ServerLobby",
-                    "New player %s with online id %u from %s with %s.",
-                    StringUtils::wideToUtf8(npp->getName()).c_str(),
-                    npp->getOnlineId(), peer->getAddress().toString().c_str(),
-                    peer->getUserVersion().c_str());
-            }
-        }
         updatePlayerList();
         peer->sendPacket(message_ack);
         delete message_ack;
@@ -4273,18 +4268,6 @@ void ServerLobby::handleUnencryptedConnection(std::shared_ptr<STKPeer> peer,
     {
         peer->setWaitingForGame(false);
         m_peers_ready[peer] = false;
-        if (!ServerConfig::m_sql_management)
-        {
-            for (std::shared_ptr<NetworkPlayerProfile>& npp :
-                peer->getPlayerProfiles())
-            {
-                Log::info("ServerLobby",
-                    "New player %s with online id %u from %s with %s.",
-                    StringUtils::wideToUtf8(npp->getName()).c_str(),
-                    npp->getOnlineId(), peer->getAddress().toString().c_str(),
-                    peer->getUserVersion().c_str());
-            }
-        }
         updatePlayerList();
         peer->sendPacket(message_ack);
         delete message_ack;
