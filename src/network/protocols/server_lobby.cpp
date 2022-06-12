@@ -870,6 +870,7 @@ void ServerLobby::handleChat(Event* event)
     bool muted = m_muted_players.find(message_sender) != m_muted_players.end();
 
     std::string log_tag = muted ? "ServerLobbyChat [muted]" : "ServerLobbyChat";
+    message_utf8 = message_sender + message_text;
     Log::info(log_tag.c_str(), message_utf8.c_str());
 
     if (m_faked_players.find(message_sender) != m_faked_players.end())
