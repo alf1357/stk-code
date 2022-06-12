@@ -862,8 +862,10 @@ void ServerLobby::handleChat(Event* event)
     event->data().decodeString16(&message, 360/*max_len*/);
 
     std::string message_utf8 = StringUtils::wideToUtf8(message);
-    std::string message_sender = StringUtils::split(message_utf8, ':')[0];
-    std::string message_text = message_utf8.substr(message_sender.length(), message_utf8.length());
+    // message_sender should be ALWAYS the peer name! It shouldn't be d
+    auto clientmessage_sender_sz = StringUtils::split(message_utf8, ':')[0].length();
+    std::string message_sender = StringUtils::wideToUtf8(event->getPeer()->getPlayerProfiles()[0]->getName());
+    std::string message_text = message_utf8.substr(clientmessage_sender_sz, message_utf8.length());
 
     bool muted = m_muted_players.find(message_sender) != m_muted_players.end();
 
@@ -6375,7 +6377,7 @@ void ServerLobby::handleServerCommand(Event* event,
 
         if (player_peer)
         {
-            if (!isTrusted(peer)) return;
+            if (!isTrusted(peer) && peer != m_server_owner.lock()) return;
 
             // updateServerOwner()
             NetworkString* ns = getNetworkString();
@@ -6719,7 +6721,7 @@ void ServerLobby::handleServerCommand(Event* event,
             msg = "This command is only for SuperTournament.";
         if (!isVIP(peer))
             msg = "You are not server owner";
-        if (!m_state.load() == WAITING_FOR_START_GAME)
+        if (m_state.load() != WAITING_FOR_START_GAME)
             msg = "This commmand can only be used in the lobby.";
         if (msg != "")
         {
