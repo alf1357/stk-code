@@ -442,25 +442,31 @@ void SoccerWorld::update(int ticks)
 
     if (m_pos_log)
     {
-        for (unsigned int i = 0; i < m_karts.size(); i++)
-        {
-            //if (m_xyz_str_count%10!=0) break;
-            auto xyz_print = m_karts[i]->getXYZ();
-            KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
-            std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
-            //std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
-            std::string xyz_name2 = GlobalLog::getPlayerName(i);
-            if (xyz_name2.size() < 2) continue;
-            std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
-            GlobalLog::writeLog(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n", GlobalLogTypes::POS_LOG);
-        }
-        auto ball_print = getBallPosition();
-        if (1) //(m_xyz_str_count%10==0)
-        {
-            std::string xyz_ball2 = std::to_string(ball_print[0])+" "+std::to_string(ball_print[1])+" "+std::to_string(ball_print[2]);
-            GlobalLog::writeLog( "p " + xyz_ball2 +"\n", GlobalLogTypes::POS_LOG);
-        }
-        m_xyz_str_count+=1;
+	if (m_pos_log_skip_counter >= stk_config->getPhysicsFPS())
+	{
+            for (unsigned int i = 0; i < m_karts.size(); i++)
+            {
+                //if (m_xyz_str_count%10!=0) break;
+                auto xyz_print = m_karts[i]->getXYZ();
+                KartTeam current_kart_team = getKartTeam(m_karts[i]->getWorldKartId());
+                std::string current_team = (current_kart_team==KART_TEAM_RED ? "red" : "blue") ;
+                //std::string xyz_name2 = StringUtils::wideToUtf8(m_karts[i]->getController()->getName());
+                std::string xyz_name2 = GlobalLog::getPlayerName(i);
+                if (xyz_name2.size() < 2) continue;
+                std::string xyz_str2 = std::to_string(xyz_print[0])+" "+std::to_string(xyz_print[1])+" "+std::to_string(xyz_print[2]);
+                GlobalLog::writeLog(xyz_name2 + " " + xyz_str2 +" "+current_team+"\n", GlobalLogTypes::POS_LOG);
+            }
+            auto ball_print = getBallPosition();
+            if (1) //(m_xyz_str_count%10==0)
+            {
+                std::string xyz_ball2 = std::to_string(ball_print[0])+" "+std::to_string(ball_print[1])+" "+std::to_string(ball_print[2]);
+                GlobalLog::writeLog( "p " + xyz_ball2 +"\n", GlobalLogTypes::POS_LOG);
+            }
+            m_xyz_str_count+=1;
+	    m_pos_log_skip_counter=1;
+	}
+        else
+            m_pos_log_skip_counter+=1;
     }
     
     if (isGoalPhase())
