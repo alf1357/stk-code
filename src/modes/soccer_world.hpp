@@ -81,6 +81,7 @@ private:
     // Postion Log
     int m_xyz_str_count=0;
     bool m_pos_log;
+    int m_pos_log_skip_counter=1;
     // Log
 
     std::vector<KartDistanceMap> m_red_kdm;
