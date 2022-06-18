@@ -67,6 +67,7 @@
 #include <regex>
 #include <iterator>
 #include <vector>
+#include <cstdio>
 
 
 // ========================================================================
@@ -6904,9 +6905,30 @@ void ServerLobby::handleServerCommand(Event* event,
             sendStringToPeer(msg, peer);
             return;
         }
-
     }
 
+    else if (argv[0] == "positions")
+    {
+        std::string pos_log_path = ServerConfig::m_pos_log_path;
+        if (pos_log_path.find("'") == std::string::npos)
+        {
+            std::string str = "cat '"+pos_log_path+"' | pps.py";
+            auto pipe = popen(str.c_str(),"r");
+            if (pipe)
+            {
+                std::array<char, 128> b;
+                std::string a="";
+                while (!feof(pipe))
+                    if (fgets(b.data(),128,pipe)) a+=b.data();
+                if (pclose(pipe)==EXIT_SUCCESS)
+                {
+                    sendStringToAllPeers(a);
+                    GlobalLog::closeLog(GlobalLogTypes::POS_LOG);
+                    remove(ServerConfig::m_pos_log_path.c_str());
+                }
+            }
+        }
+    }
 
 
     else if (StringUtils::startsWith(cmd, "playeraddonscore"))
