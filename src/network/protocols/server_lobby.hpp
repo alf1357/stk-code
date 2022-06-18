@@ -448,7 +448,7 @@ public:
 
     std::set<std::string> m_vip_players;
     std::set<std::string> m_trusted_players;
-    std::vector<std::string> m_console_commands = {"listserveraddon","sethost","yellow","teams","game","lobby","video","referee","stop","go","end","setfield","setkart","serverhasddon","queue","fake","unfake","xmute","xunmute","kick"};
+    std::vector<std::string> m_console_commands = {"listserveraddon","sethost","yellow","teams","game","lobby","video","referee","stop","go","end","setfield","setkart","serverhasddon","queue","fake","unfake","xmute","xunmute","kick","positions"};
     void sendStringToPeer(std::string& s, std::shared_ptr<STKPeer>& peer) const;
     void sendStringToAllPeers(std::string& s);
     bool serverAndPeerHaveTrack(std::shared_ptr<STKPeer>& peer, std::string track_id) const;
